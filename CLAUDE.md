@@ -9,7 +9,13 @@ Local: `C:\Users\bansi\OneDrive\Desktop\ClaudeCodeTest`
 
 ## Git Workflow
 
-Every change must be committed and pushed to GitHub. Use clean, descriptive commit messages. After completing any feature or fix:
+**Commit and push to GitHub continuously as work progresses — do not batch everything at the end.** This ensures work is never lost and the repo always reflects the current state.
+
+Rules:
+- Commit after every meaningful unit of work (feature added, bug fixed, file created)
+- Push immediately after every commit — never leave commits unpushed
+- Stage specific files by name, never `git add .` or `git add -A`
+- Write clean, imperative commit messages that describe *what changed and why*
 
 ```bash
 git add <specific files>

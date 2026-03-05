@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect 4</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #fce4f3 0%, #dce9ff 100%);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      background: linear-gradient(90deg, #e05aaa, #5a8de0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #scoreboard {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 18px;
+    }
+
+    .score-card {
+      text-align: center;
+      padding: 10px 24px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+      min-width: 90px;
+    }
+
+    .score-card.pink  { background: linear-gradient(135deg, #f472b6, #e0368a); }
+    .score-card.blue  { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+
+    .score-card .name { font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
+    .score-card .pts  { font-size: 1.8rem; line-height: 1.1; }
+
+    #status {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      height: 28px;
+      color: #555;
+      transition: color 0.2s;
+    }
+
+    #status.pink-turn { color: #e0368a; }
+    #status.blue-turn { color: #2563eb; }
+    #status.win       { color: #333; font-size: 1.3rem; }
+
+    /* drop indicator row */
+    #indicator-row {
+      display: grid;
+      grid-template-columns: repeat(7, 64px);
+      gap: 6px;
+      margin-bottom: 4px;
+      height: 26px;
+    }
+
+    .indicator-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .indicator-cell .drop-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .indicator-cell.hovered .drop-dot { opacity: 0.7; }
+
+    /* board */
+    #board-wrap {
+      background: linear-gradient(160deg, #c7d7ff, #f7c8ee);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 8px 32px rgba(120,80,180,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(7, 64px);
+      grid-template-rows: repeat(6, 64px);
+      gap: 6px;
+    }
+
+    .cell {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.55);
+      cursor: pointer;
+      transition: background 0.18s, transform 0.15s, box-shadow 0.15s;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.10);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cell:hover { transform: scale(1.05); }
+
+    .cell.pink {
+      background: radial-gradient(circle at 35% 35%, #f9a8d4, #e0368a);
+      box-shadow: 0 3px 12px rgba(224,54,138,0.45), inset 0 1px 3px rgba(255,255,255,0.3);
+      cursor: default;
+    }
+
+    .cell.blue {
+      background: radial-gradient(circle at 35% 35%, #93c5fd, #2563eb);
+      box-shadow: 0 3px 12px rgba(37,99,235,0.4), inset 0 1px 3px rgba(255,255,255,0.3);
+      cursor: default;
+    }
+
+    .cell.win-cell {
+      animation: pulse 0.7s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1);    filter: brightness(1); }
+      to   { transform: scale(1.12); filter: brightness(1.2); }
+    }
+
+    /* drop animation */
+    .cell.drop {
+      animation: dropIn 0.28s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @keyframes dropIn {
+      from { transform: translateY(-320px); }
+      to   { transform: translateY(0); }
+    }
+
+    /* buttons */
+    #controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px 28px;
+      border: none;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+    button:active { transform: translateY(0); }
+
+    #btn-reset {
+      background: linear-gradient(90deg, #f472b6, #60a5fa);
+      color: #fff;
+    }
+
+    #btn-cpu {
+      background: #fff;
+      color: #555;
+      border: 2px solid #c4b5fd;
+    }
+
+    #btn-cpu.active {
+      background: linear-gradient(90deg, #a78bfa, #818cf8);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    #mode-label {
+      font-size: 0.82rem;
+      color: #888;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Connect 4</h1>
+
+<div id="scoreboard">
+  <div class="score-card pink">
+    <div class="name">Pink</div>
+    <div class="pts" id="score-pink">0</div>
+  </div>
+  <div class="score-card blue">
+    <div class="name">Blue</div>
+    <div class="pts" id="score-blue">0</div>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<div id="indicator-row"></div>
+<div id="board-wrap">
+  <div id="board"></div>
+</div>
+
+<div id="controls">
+  <button id="btn-reset" onclick="resetGame()">New Game</button>
+  <button id="btn-cpu" onclick="toggleCPU()">vs CPU</button>
+</div>
+<div id="mode-label" id="mode-label"></div>
+
+<script>
+  const ROWS = 6, COLS = 7;
+  // 1 = pink (human), 2 = blue (opponent/CPU)
+  let board, current, gameOver, vsCPU, scores;
+
+  function init() {
+    board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    current = 1;
+    gameOver = false;
+    scores = scores || { 1: 0, 2: 0 };
+    vsCPU = vsCPU || false;
+    render();
+  }
+
+  function resetGame() {
+    board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    current = 1;
+    gameOver = false;
+    render();
+  }
+
+  function toggleCPU() {
+    vsCPU = !vsCPU;
+    document.getElementById('btn-cpu').classList.toggle('active', vsCPU);
+    document.getElementById('mode-label').textContent = vsCPU ? 'Playing vs CPU (you are Pink)' : 'Two Player Mode';
+    resetGame();
+  }
+
+  /* ---- drop logic ---- */
+  function dropPiece(col) {
+    if (gameOver) return;
+    if (vsCPU && current === 2) return; // wait for CPU
+
+    const row = lowestEmpty(col);
+    if (row === -1) return;
+
+    place(row, col, current);
+  }
+
+  function lowestEmpty(col) {
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (board[r][col] === 0) return r;
+    }
+    return -1;
+  }
+
+  function place(row, col, player) {
+    board[row][col] = player;
+    const won = checkWin(row, col, player);
+    const tied = !won && board[0].every((v, c) => lowestEmpty(c) === -1);
+
+    if (won) {
+      scores[player]++;
+      gameOver = true;
+      render(won.cells);
+      return;
+    }
+    if (tied) {
+      gameOver = true;
+      render();
+      return;
+    }
+
+    current = current === 1 ? 2 : 1;
+    render();
+
+    if (vsCPU && current === 2 && !gameOver) {
+      setTimeout(cpuMove, 420);
+    }
+  }
+
+  /* ---- CPU ---- */
+  function cpuMove() {
+    if (gameOver) return;
+    const col = bestMove();
+    const row = lowestEmpty(col);
+    place(row, col, 2);
+  }
+
+  function bestMove() {
+    // Win
+    for (let c = 0; c < COLS; c++) {
+      const r = lowestEmpty(c);
+      if (r !== -1 && wouldWin(r, c, 2)) return c;
+    }
+    // Block
+    for (let c = 0; c < COLS; c++) {
+      const r = lowestEmpty(c);
+      if (r !== -1 && wouldWin(r, c, 1)) return c;
+    }
+    // Score columns
+    const scores = Array(COLS).fill(0);
+    for (let c = 0; c < COLS; c++) {
+      const r = lowestEmpty(c);
+      if (r === -1) { scores[c] = -999; continue; }
+      scores[c] += scorePos(r, c, 2) - scorePos(r, c, 1) * 0.9;
+      // prefer center
+      scores[c] += (3 - Math.abs(c - 3)) * 0.5;
+    }
+    const max = Math.max(...scores);
+    const candidates = scores.map((s, i) => s === max ? i : -1).filter(i => i !== -1);
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function wouldWin(r, c, p) {
+    board[r][c] = p;
+    const win = checkWin(r, c, p);
+    board[r][c] = 0;
+    return !!win;
+  }
+
+  function scorePos(r, c, p) {
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    let total = 0;
+    for (const [dr, dc] of dirs) {
+      let count = 1;
+      for (let d = 1; d < 4; d++) {
+        const nr = r + dr*d, nc = c + dc*d;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+        if (board[nr][nc] === p) count++;
+        else break;
+      }
+      for (let d = 1; d < 4; d++) {
+        const nr = r - dr*d, nc = c - dc*d;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) break;
+        if (board[nr][nc] === p) count++;
+        else break;
+      }
+      total += count;
+    }
+    return total;
+  }
+
+  /* ---- win detection ---- */
+  function checkWin(row, col, player) {
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    for (const [dr, dc] of dirs) {
+      const cells = [[row, col]];
+      for (let d = 1; d < 4; d++) {
+        const nr = row + dr*d, nc = col + dc*d;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[nr][nc] !== player) break;
+        cells.push([nr, nc]);
+      }
+      for (let d = 1; d < 4; d++) {
+        const nr = row - dr*d, nc = col - dc*d;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || board[nr][nc] !== player) break;
+        cells.push([nr, nc]);
+      }
+      if (cells.length >= 4) return { player, cells };
+    }
+    return null;
+  }
+
+  /* ---- render ---- */
+  function render(winCells) {
+    const boardEl = document.getElementById('board');
+    const indRow  = document.getElementById('indicator-row');
+    const status  = document.getElementById('status');
+    const spink   = document.getElementById('score-pink');
+    const sblue   = document.getElementById('score-blue');
+
+    spink.textContent = scores[1];
+    sblue.textContent = scores[2];
+
+    // status text
+    status.className = '';
+    if (gameOver) {
+      const tied = board[0].every((v, c) => lowestEmpty(c) === -1) && !winCells;
+      if (tied) {
+        status.textContent = "It's a draw!";
+        status.className = 'win';
+      } else {
+        const name = (winCells || {player: current}).player === 1 ? 'Pink' : 'Blue';
+        status.textContent = `${name} wins!`;
+        status.className = 'win';
+      }
+    } else {
+      const name = current === 1 ? 'Pink' : 'Blue';
+      status.textContent = `${name}'s turn`;
+      status.className = current === 1 ? 'pink-turn' : 'blue-turn';
+    }
+
+    // build win cell set for quick lookup
+    const winSet = new Set((winCells || []).map(([r,c]) => `${r},${c}`));
+
+    // indicator row
+    indRow.innerHTML = '';
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'indicator-cell';
+      cell.dataset.col = c;
+      const dot = document.createElement('div');
+      dot.className = 'drop-dot';
+      dot.style.background = current === 1
+        ? 'radial-gradient(circle at 35% 35%, #f9a8d4, #e0368a)'
+        : 'radial-gradient(circle at 35% 35%, #93c5fd, #2563eb)';
+      cell.appendChild(dot);
+      indRow.appendChild(cell);
+    }
+
+    // board cells
+    boardEl.innerHTML = '';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.col = c;
+        cell.dataset.row = r;
+
+        if (board[r][c] === 1) {
+          cell.classList.add('pink');
+        } else if (board[r][c] === 2) {
+          cell.classList.add('blue');
+        }
+
+        if (winSet.has(`${r},${c}`)) {
+          cell.classList.add('win-cell');
+        }
+
+        cell.addEventListener('click', () => dropPiece(c));
+        cell.addEventListener('mouseenter', () => hoverCol(c, true));
+        cell.addEventListener('mouseleave', () => hoverCol(c, false));
+
+        boardEl.appendChild(cell);
+      }
+    }
+
+    // attach hover to indicator cells too
+    indRow.querySelectorAll('.indicator-cell').forEach(ic => {
+      const col = +ic.dataset.col;
+      ic.addEventListener('click', () => dropPiece(col));
+      ic.addEventListener('mouseenter', () => hoverCol(col, true));
+      ic.addEventListener('mouseleave', () => hoverCol(col, false));
+    });
+  }
+
+  function hoverCol(col, on) {
+    if (gameOver) return;
+    // highlight board column
+    document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(c => {
+      if (!c.classList.contains('pink') && !c.classList.contains('blue')) {
+        c.style.background = on
+          ? (current === 1 ? 'rgba(244,114,182,0.25)' : 'rgba(96,165,250,0.25)')
+          : '';
+      }
+    });
+    // show indicator dot
+    const ic = document.querySelector(`.indicator-cell[data-col="${col}"]`);
+    if (ic) ic.classList.toggle('hovered', on);
+  }
+
+  // start
+  scores = { 1: 0, 2: 0 };
+  vsCPU = false;
+  init();
+</script>
+</body>
+</html>

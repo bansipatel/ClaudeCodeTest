@@ -7,6 +7,13 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --p1-primary: #e0368a;
+      --p1-light:   #f9a8d4;
+      --p2-primary: #2563eb;
+      --p2-light:   #93c5fd;
+    }
+
     body {
       min-height: 100vh;
       display: flex;
@@ -41,7 +48,7 @@
       border-radius: 18px;
       padding: 20px 28px;
       box-shadow: 0 4px 20px rgba(140,80,180,0.10);
-      width: 280px;
+      width: 300px;
     }
 
     .lobby-group h3 {
@@ -56,6 +63,65 @@
       font-size: 0.8rem;
       color: #bbb;
       margin: 2px 0;
+    }
+
+    /* ---- COLOR PICKER ---- */
+    .color-picker-section {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .color-picker-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .color-picker-col-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #aaa;
+      font-weight: 600;
+    }
+
+    .color-swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+      width: 113px; /* 4 × 22px + 3 × 5px gaps */
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.5);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+
+    .swatch:hover:not(.taken) { transform: scale(1.25); }
+
+    .swatch.selected {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px #7c3aed, 0 2px 8px rgba(0,0,0,0.25);
+      transform: scale(1.15);
+    }
+
+    .swatch.taken {
+      opacity: 0.2;
+      cursor: not-allowed;
+    }
+
+    .color-conflict {
+      font-size: 0.78rem;
+      color: #dc2626;
+      text-align: center;
+      display: none;
     }
 
     /* ---- WAITING ---- */
@@ -103,8 +169,8 @@
       min-width: 90px;
     }
 
-    .score-card.pink  { background: linear-gradient(135deg, #f472b6, #e0368a); }
-    .score-card.blue  { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+    .score-card.p1 { background: linear-gradient(135deg, var(--p1-light), var(--p1-primary)); }
+    .score-card.p2 { background: linear-gradient(135deg, var(--p2-light), var(--p2-primary)); }
     .score-card .name { font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
     .score-card .pts  { font-size: 1.8rem; line-height: 1.1; }
 
@@ -124,9 +190,9 @@
       color: #555;
     }
 
-    #status.pink-turn { color: #e0368a; }
-    #status.blue-turn { color: #2563eb; }
-    #status.win       { color: #333; font-size: 1.3rem; }
+    #status.p1-turn { color: var(--p1-primary); }
+    #status.p2-turn { color: var(--p2-primary); }
+    #status.win      { color: #333; font-size: 1.3rem; }
 
     #indicator-row {
       display: grid;
@@ -170,15 +236,15 @@
 
     .cell:hover { transform: scale(1.05); }
 
-    .cell.pink {
-      background: radial-gradient(circle at 35% 35%, #f9a8d4, #e0368a);
-      box-shadow: 0 3px 12px rgba(224,54,138,0.45), inset 0 1px 3px rgba(255,255,255,0.3);
+    .cell.p1 {
+      background: radial-gradient(circle at 35% 35%, var(--p1-light), var(--p1-primary));
+      box-shadow: 0 3px 12px rgba(0,0,0,0.25), inset 0 1px 3px rgba(255,255,255,0.3);
       cursor: default;
     }
 
-    .cell.blue {
-      background: radial-gradient(circle at 35% 35%, #93c5fd, #2563eb);
-      box-shadow: 0 3px 12px rgba(37,99,235,0.4), inset 0 1px 3px rgba(255,255,255,0.3);
+    .cell.p2 {
+      background: radial-gradient(circle at 35% 35%, var(--p2-light), var(--p2-primary));
+      box-shadow: 0 3px 12px rgba(0,0,0,0.25), inset 0 1px 3px rgba(255,255,255,0.3);
       cursor: default;
     }
 
@@ -271,6 +337,21 @@
     Online play requires setup. See the instructions below or play locally.
   </div>
 
+  <!-- Color picker -->
+  <div class="lobby-group">
+    <h3>Player Colors</h3>
+    <div class="color-picker-section">
+      <div class="color-picker-col">
+        <div class="color-picker-col-label">Player 1</div>
+        <div class="color-swatches" id="swatches-p1"></div>
+      </div>
+      <div class="color-picker-col">
+        <div class="color-picker-col-label">Player 2</div>
+        <div class="color-swatches" id="swatches-p2"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="lobby-group">
     <h3>Play Online</h3>
     <button class="btn-primary" onclick="createGame()" style="width:100%">Create Game</button>
@@ -279,6 +360,7 @@
       <input type="text" id="join-code" placeholder="CODE" maxlength="6">
       <button class="btn-primary" onclick="joinGame()" style="padding:10px 18px">Join</button>
     </div>
+    <div class="color-conflict" id="color-conflict"></div>
   </div>
 
   <div class="lobby-group">
@@ -304,13 +386,13 @@
   <h1>Connect 4</h1>
 
   <div id="scoreboard">
-    <div class="score-card pink">
-      <div class="name">Pink</div>
-      <div class="pts" id="score-pink">0</div>
+    <div class="score-card p1">
+      <div class="name" id="score-name-p1">Player 1</div>
+      <div class="pts" id="score-p1">0</div>
     </div>
-    <div class="score-card blue">
-      <div class="name">Blue</div>
-      <div class="pts" id="score-blue">0</div>
+    <div class="score-card p2">
+      <div class="name" id="score-name-p2">Player 2</div>
+      <div class="pts" id="score-p2">0</div>
     </div>
   </div>
 
@@ -347,6 +429,17 @@ const FIREBASE_CONFIG = {
 };
 // ============================================================
 
+const COLOR_DEFS = {
+  pink:   { label: 'Pink',   primary: '#e0368a', light: '#f9a8d4' },
+  orange: { label: 'Orange', primary: '#ea6c1a', light: '#fdba74' },
+  yellow: { label: 'Yellow', primary: '#ca8a04', light: '#fde047' },
+  blue:   { label: 'Blue',   primary: '#2563eb', light: '#93c5fd' },
+  green:  { label: 'Green',  primary: '#16a34a', light: '#86efac' },
+  purple: { label: 'Purple', primary: '#7c3aed', light: '#c4b5fd' },
+  black:  { label: 'Black',  primary: '#374151', light: '#9ca3af' },
+  red:    { label: 'Red',    primary: '#dc2626', light: '#fca5a5' },
+};
+
 const ROWS = 6, COLS = 7;
 
 // Game state
@@ -355,7 +448,8 @@ let scores = { 1: 0, 2: 0 };
 let myPlayer = null;   // 1 or 2 (online only)
 let roomCode  = null;
 let roomRef   = null;
-let unsubscribe = null; // Firebase listener detach fn
+let unsubscribe = null;
+let playerColors = { 1: 'pink', 2: 'blue' };
 
 // ---- Firebase ----
 let db = null;
@@ -370,7 +464,6 @@ function loadFirebase(callback) {
     alert('Firebase is not configured yet. See the setup instructions in connect4.html.');
     return;
   }
-  // Dynamically load Firebase scripts
   const scripts = [
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js'
@@ -388,6 +481,47 @@ function initFirebase(callback) {
   if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   db = firebase.database();
   callback();
+}
+
+// ---- Color helpers ----
+function applyColors() {
+  const p1 = COLOR_DEFS[playerColors[1]];
+  const p2 = COLOR_DEFS[playerColors[2]];
+  const root = document.documentElement;
+  root.style.setProperty('--p1-primary', p1.primary);
+  root.style.setProperty('--p1-light',   p1.light);
+  root.style.setProperty('--p2-primary', p2.primary);
+  root.style.setProperty('--p2-light',   p2.light);
+  const n1 = document.getElementById('score-name-p1');
+  const n2 = document.getElementById('score-name-p2');
+  if (n1) n1.textContent = p1.label;
+  if (n2) n2.textContent = p2.label;
+}
+
+function renderSwatches() {
+  [1, 2].forEach(player => {
+    const other = player === 1 ? 2 : 1;
+    const container = document.getElementById('swatches-p' + player);
+    if (!container) return;
+    container.innerHTML = '';
+    Object.entries(COLOR_DEFS).forEach(([key, def]) => {
+      const sw = document.createElement('div');
+      sw.className = 'swatch';
+      sw.style.background = def.primary;
+      sw.title = def.label;
+      if (playerColors[player] === key) sw.classList.add('selected');
+      if (playerColors[other] === key) {
+        sw.classList.add('taken');
+      } else {
+        sw.addEventListener('click', () => {
+          playerColors[player] = key;
+          applyColors();
+          renderSwatches();
+        });
+      }
+      container.appendChild(sw);
+    });
+  });
 }
 
 // ---- Room helpers ----
@@ -442,7 +576,8 @@ function createGame() {
       winCells: [],
       scores: {p1: 0, p2: 0},
       players: {p1: true, p2: false},
-      resetRequest: 0
+      resetRequest: 0,
+      colors: { p1: playerColors[1] }
     });
 
     // Auto-delete room after 2 hours
@@ -482,9 +617,29 @@ function joinGame() {
         alert('Room is full.');
         return;
       }
+
+      // Check color conflict with Player 1
+      const p1Color = data.colors && data.colors.p1 ? data.colors.p1 : 'pink';
+      const conflictEl = document.getElementById('color-conflict');
+      if (playerColors[2] === p1Color) {
+        conflictEl.textContent = `Player 1 chose ${COLOR_DEFS[p1Color].label} — pick a different color for Player 2.`;
+        conflictEl.style.display = 'block';
+        // Force-update the swatch display to show P1's taken color
+        playerColors[1] = p1Color;
+        renderSwatches();
+        return;
+      }
+      conflictEl.style.display = 'none';
+
+      // Sync P1's color locally, then join
+      playerColors[1] = p1Color;
+      applyColors();
+      renderSwatches();
+
       roomCode = code;
       myPlayer = 2;
       roomRef = ref;
+      roomRef.update({ 'colors/p2': playerColors[2] });
       roomRef.child('players/p2').set(true);
       roomRef.child('players/p2').onDisconnect().set(false);
       startOnlineGame();
@@ -508,6 +663,13 @@ function listenToRoom() {
   const handler = roomRef.on('value', snap => {
     if (!snap.exists()) { goLobby(); return; }
     const data = snap.val();
+
+    // Apply colors from Firebase
+    if (data.colors) {
+      if (data.colors.p1) playerColors[1] = data.colors.p1;
+      if (data.colors.p2) playerColors[2] = data.colors.p2;
+      applyColors();
+    }
 
     board   = expandBoard(data.board);
     current = data.current;
@@ -713,13 +875,19 @@ function renderGame(winCells) {
   const status  = document.getElementById('status');
   const badge   = document.getElementById('player-badge');
 
-  document.getElementById('score-pink').textContent = scores[1];
-  document.getElementById('score-blue').textContent = scores[2];
+  document.getElementById('score-p1').textContent = scores[1];
+  document.getElementById('score-p2').textContent = scores[2];
+  applyColors();
 
-  // Player badge
+  const p1 = COLOR_DEFS[playerColors[1]];
+  const p2 = COLOR_DEFS[playerColors[2]];
+  const curColor = current === 1 ? p1 : p2;
+
+  // Player badge (online only)
   if (mode === 'online') {
-    badge.textContent = myPlayer === 1 ? 'You are Pink' : 'You are Blue';
-    badge.style.color = myPlayer === 1 ? '#e0368a' : '#2563eb';
+    const myColor = COLOR_DEFS[playerColors[myPlayer]];
+    badge.textContent = `You are ${myColor.label}`;
+    badge.style.color = myColor.primary;
   } else {
     badge.textContent = '';
   }
@@ -731,19 +899,17 @@ function renderGame(winCells) {
     if (tied) {
       status.textContent = "It's a draw!";
     } else {
-      const winner = winCells ? board[winCells[0][0]][winCells[0][1]] : current;
-      const name = winner === 1 ? 'Pink' : 'Blue';
-      status.textContent = `${name} wins!`;
+      const winner = board[winCells[0][0]][winCells[0][1]];
+      status.textContent = `${(winner === 1 ? p1 : p2).label} wins!`;
     }
     status.className = 'win';
   } else {
-    const isMyTurn = mode !== 'online' || current === myPlayer;
     if (mode === 'online') {
-      status.textContent = isMyTurn ? 'Your turn' : "Opponent's turn";
+      status.textContent = current === myPlayer ? 'Your turn' : "Opponent's turn";
     } else {
-      status.textContent = (current === 1 ? 'Pink' : 'Blue') + "'s turn";
+      status.textContent = curColor.label + "'s turn";
     }
-    status.className = current === 1 ? 'pink-turn' : 'blue-turn';
+    status.className = current === 1 ? 'p1-turn' : 'p2-turn';
   }
 
   const winSet = new Set((winCells || []).map(([r,c]) => `${r},${c}`));
@@ -757,9 +923,7 @@ function renderGame(winCells) {
     cell.dataset.col = c;
     const dot = document.createElement('div');
     dot.className = 'drop-dot';
-    dot.style.background = current === 1
-      ? 'radial-gradient(circle at 35% 35%, #f9a8d4, #e0368a)'
-      : 'radial-gradient(circle at 35% 35%, #93c5fd, #2563eb)';
+    dot.style.background = `radial-gradient(circle at 35% 35%, ${curColor.light}, ${curColor.primary})`;
     cell.appendChild(dot);
     if (canPlay) {
       cell.addEventListener('click', () => dropPiece(c));
@@ -777,8 +941,8 @@ function renderGame(winCells) {
       cell.className = 'cell';
       cell.dataset.col = c;
 
-      if (board[r][c] === 1) cell.classList.add('pink');
-      else if (board[r][c] === 2) cell.classList.add('blue');
+      if (board[r][c] === 1) cell.classList.add('p1');
+      else if (board[r][c] === 2) cell.classList.add('p2');
       else if (!canPlay) cell.classList.add('not-my-turn');
 
       if (winSet.has(`${r},${c}`)) cell.classList.add('win-cell');
@@ -796,11 +960,10 @@ function renderGame(winCells) {
 
 function hoverCol(col, on) {
   if (gameOver) return;
+  const primary = COLOR_DEFS[playerColors[current]].primary;
   document.querySelectorAll(`.cell[data-col="${col}"]`).forEach(c => {
-    if (!c.classList.contains('pink') && !c.classList.contains('blue')) {
-      c.style.background = on
-        ? (current === 1 ? 'rgba(244,114,182,0.25)' : 'rgba(96,165,250,0.25)')
-        : '';
+    if (!c.classList.contains('p1') && !c.classList.contains('p2')) {
+      c.style.background = on ? primary + '40' : '';
     }
   });
   const ic = document.querySelector(`.indicator-cell[data-col="${col}"]`);
@@ -811,6 +974,8 @@ function hoverCol(col, on) {
 if (!isFirebaseConfigured()) {
   document.getElementById('config-warning').style.display = 'block';
 }
+applyColors();
+renderSwatches();
 showScreen('screen-lobby');
 </script>
 </body>

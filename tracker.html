@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Nutrition & Hydration Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f0f13;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  header p {
+    color: #888;
+    margin-top: 4px;
+    font-size: 0.95rem;
+  }
+
+  .cards {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .card {
+    background: #1a1a24;
+    border: 1px solid #2a2a3a;
+    border-radius: 12px;
+    padding: 16px 20px;
+    min-width: 140px;
+    flex: 1 1 130px;
+    max-width: 200px;
+  }
+
+  .card-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    margin-bottom: 6px;
+  }
+
+  .card-value {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+    white-space: nowrap;
+  }
+
+  .card-value span.unit {
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: 400;
+  }
+
+  .goal-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    color: #666;
+  }
+
+  .goal-row label { flex-shrink: 0; }
+
+  .goal-input {
+    width: 64px;
+    background: #12121a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 0.78rem;
+    padding: 2px 5px;
+    text-align: right;
+  }
+
+  .progress-track {
+    height: 6px;
+    background: #2a2a3a;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease, background 0.3s ease;
+  }
+
+  /* Section containers */
+  .section {
+    background: #1a1a24;
+    border: 1px solid #2a2a3a;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    max-width: 860px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .section h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ccc;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .form-field label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  .form-field input {
+    background: #12121a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+    padding: 8px 10px;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  .form-field input:focus {
+    outline: none;
+    border-color: #4a8fff;
+  }
+
+  .form-field input[type="text"] {
+    font-size: 0.9rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 22px;
+    border: none;
+    border-radius: 7px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:hover { opacity: 0.88; }
+
+  .btn-primary {
+    background: #4a8fff;
+    color: #fff;
+  }
+
+  .btn-danger {
+    background: #c0392b;
+    color: #fff;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    border-radius: 5px;
+  }
+
+  .btn-secondary {
+    background: #2a2a3a;
+    color: #bbb;
+    font-size: 0.82rem;
+    padding: 7px 16px;
+  }
+
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Entry log */
+  .entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .entry-list::-webkit-scrollbar { width: 5px; }
+  .entry-list::-webkit-scrollbar-track { background: #12121a; }
+  .entry-list::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  .entry-item {
+    background: #12121a;
+    border: 1px solid #252535;
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .entry-info {
+    flex: 1;
+  }
+
+  .entry-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ddd;
+    margin-bottom: 4px;
+    text-transform: capitalize;
+  }
+
+  .entry-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: #777;
+  }
+
+  .entry-stat span {
+    color: #aaa;
+    font-weight: 500;
+  }
+
+  .entry-time {
+    font-size: 0.72rem;
+    color: #555;
+    margin-top: 4px;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #555;
+    font-size: 0.9rem;
+    padding: 24px;
+  }
+
+  /* Colors per metric */
+  [data-metric="water"]    { --c: #3b9edd; }
+  [data-metric="calories"] { --c: #e8a838; }
+  [data-metric="protein"]  { --c: #e05c5c; }
+  [data-metric="carbs"]    { --c: #8e6cd8; }
+  [data-metric="fat"]      { --c: #4dbfa0; }
+
+  .progress-fill { background: var(--c, #4a8fff); }
+  .card[data-metric] .card-label { color: var(--c, #888); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Daily Nutrition & Hydration Tracker</h1>
+  <p id="date-display"></p>
+</header>
+
+<!-- Summary Cards -->
+<div class="cards" id="cards"></div>
+
+<!-- Add Entry -->
+<div class="section">
+  <h2>Add Entry</h2>
+  <div class="form-grid">
+    <div class="form-field" style="grid-column: 1/-1; max-width:220px;">
+      <label>Label (optional)</label>
+      <input type="text" id="input-label" placeholder="e.g. lunch, snack">
+    </div>
+    <div class="form-field">
+      <label>Water (oz)</label>
+      <input type="number" id="input-water" min="0" step="0.5" placeholder="0">
+    </div>
+    <div class="form-field">
+      <label>Calories</label>
+      <input type="number" id="input-calories" min="0" step="1" placeholder="0">
+    </div>
+    <div class="form-field">
+      <label>Protein (g)</label>
+      <input type="number" id="input-protein" min="0" step="0.1" placeholder="0">
+    </div>
+    <div class="form-field">
+      <label>Carbs (g)</label>
+      <input type="number" id="input-carbs" min="0" step="0.1" placeholder="0">
+    </div>
+    <div class="form-field">
+      <label>Fat (g)</label>
+      <input type="number" id="input-fat" min="0" step="0.1" placeholder="0">
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="addEntry()">Add Entry</button>
+    <button class="btn btn-secondary" onclick="resetDay()">Reset Day</button>
+  </div>
+</div>
+
+<!-- Entry Log -->
+<div class="section">
+  <h2>Today's Entries</h2>
+  <div class="entry-list" id="entry-list"></div>
+</div>
+
+<script>
+  const METRICS = [
+    { key: 'water',    label: 'Water',    unit: 'oz' },
+    { key: 'calories', label: 'Calories', unit: 'kcal' },
+    { key: 'protein',  label: 'Protein',  unit: 'g' },
+    { key: 'carbs',    label: 'Carbs',    unit: 'g' },
+    { key: 'fat',      label: 'Fat',      unit: 'g' },
+  ];
+
+  const DEFAULT_GOALS = { water: 64, calories: 2000, protein: 150, carbs: 250, fat: 65 };
+  const STORAGE_KEY = 'tracker';
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+  }
+
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function initState() {
+    const today = todayStr();
+    let state = loadState();
+
+    if (!state) {
+      state = { date: today, goals: { ...DEFAULT_GOALS }, entries: [] };
+    } else if (state.date !== today) {
+      // New day — reset entries, keep goals
+      state.date = today;
+      state.entries = [];
+    }
+
+    return state;
+  }
+
+  let state = initState();
+
+  // ---- Render ----
+
+  function totals() {
+    const t = { water: 0, calories: 0, protein: 0, carbs: 0, fat: 0 };
+    for (const e of state.entries) {
+      for (const m of METRICS) t[m.key] += (e[m.key] || 0);
+    }
+    return t;
+  }
+
+  function renderCards() {
+    const t = totals();
+    const container = document.getElementById('cards');
+    container.innerHTML = '';
+
+    for (const m of METRICS) {
+      const goal = state.goals[m.key];
+      const cur = t[m.key];
+      const pct = Math.min(100, goal > 0 ? (cur / goal) * 100 : 0);
+      const barColor = pct >= 100 ? '#27ae60' : null; // green when done
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.metric = m.key;
+
+      const displayCur = Number.isInteger(cur) ? cur : parseFloat(cur.toFixed(1));
+      const displayGoal = state.goals[m.key];
+
+      card.innerHTML = `
+        <div class="card-label">${m.label}</div>
+        <div class="card-value">${displayCur} / ${displayGoal} <span class="unit">${m.unit}</span></div>
+        <div class="goal-row">
+          <label>Goal:</label>
+          <input class="goal-input" type="number" min="1" value="${displayGoal}"
+            onchange="updateGoal('${m.key}', this.value)">
+          <span>${m.unit}</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${pct}%;${barColor ? 'background:' + barColor + ';' : ''}"></div>
+        </div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  function renderEntries() {
+    const list = document.getElementById('entry-list');
+    list.innerHTML = '';
+
+    if (state.entries.length === 0) {
+      list.innerHTML = '<div class="empty-state">No entries yet. Add your first entry above.</div>';
+      return;
+    }
+
+    // Most recent first
+    const sorted = [...state.entries].reverse();
+    for (const entry of sorted) {
+      const item = document.createElement('div');
+      item.className = 'entry-item';
+
+      const timeStr = new Date(entry.id).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const labelText = entry.label || 'Entry';
+
+      const stats = METRICS
+        .filter(m => entry[m.key] > 0)
+        .map(m => {
+          const val = Number.isInteger(entry[m.key]) ? entry[m.key] : parseFloat(entry[m.key].toFixed(1));
+          return `<div class="entry-stat">${m.label}: <span>${val} ${m.unit}</span></div>`;
+        }).join('');
+
+      item.innerHTML = `
+        <div class="entry-info">
+          <div class="entry-label">${escHtml(labelText)}</div>
+          <div class="entry-stats">${stats || '<span style="color:#555">No values recorded</span>'}</div>
+          <div class="entry-time">${timeStr}</div>
+        </div>
+        <button class="btn btn-danger" onclick="deleteEntry(${entry.id})">Delete</button>
+      `;
+      list.appendChild(item);
+    }
+  }
+
+  function render() {
+    document.getElementById('date-display').textContent = new Date().toLocaleDateString(undefined, {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    renderCards();
+    renderEntries();
+  }
+
+  // ---- Actions ----
+
+  function addEntry() {
+    const label = document.getElementById('input-label').value.trim();
+    const entry = {
+      id: Date.now(),
+      label,
+    };
+
+    let hasValue = false;
+    for (const m of METRICS) {
+      const raw = document.getElementById('input-' + m.key).value;
+      const val = parseFloat(raw) || 0;
+      entry[m.key] = val;
+      if (val > 0) hasValue = true;
+    }
+
+    if (!hasValue && !label) {
+      alert('Please enter at least one value before adding an entry.');
+      return;
+    }
+
+    state.entries.push(entry);
+    saveState(state);
+
+    // Clear form
+    document.getElementById('input-label').value = '';
+    for (const m of METRICS) document.getElementById('input-' + m.key).value = '';
+
+    render();
+  }
+
+  function deleteEntry(id) {
+    state.entries = state.entries.filter(e => e.id !== id);
+    saveState(state);
+    render();
+  }
+
+  function updateGoal(metric, value) {
+    const v = parseFloat(value);
+    if (isNaN(v) || v <= 0) return;
+    state.goals[metric] = v;
+    saveState(state);
+    renderCards();
+  }
+
+  function resetDay() {
+    if (!confirm('Clear all entries for today?')) return;
+    state.entries = [];
+    saveState(state);
+    render();
+  }
+
+  function escHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Allow Enter key in form inputs to submit
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && ['INPUT'].includes(e.target.tagName) && e.target.id !== 'input-label') {
+      addEntry();
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>

@@ -8,7 +8,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: #0f0f13;
+    background: #808080;
     color: #e0e0e0;
     font-family: 'Segoe UI', sans-serif;
     min-height: 100vh;
@@ -27,11 +27,42 @@
     letter-spacing: 0.5px;
   }
 
-  header p {
-    color: #888;
-    margin-top: 4px;
-    font-size: 0.95rem;
+  .date-picker-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
   }
+
+  .date-picker-row label {
+    color: #ddd;
+    font-size: 0.9rem;
+  }
+
+  #date-input {
+    background: #2a2a3a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  #date-input:focus { outline: none; border-color: #4a8fff; }
+
+  .today-btn {
+    background: #3a3a4a;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #bbb;
+    font-size: 0.8rem;
+    padding: 5px 11px;
+    cursor: pointer;
+  }
+
+  .today-btn:hover { background: #4a4a5a; }
 
   .cards {
     display: flex;
@@ -289,7 +320,11 @@
 
 <header>
   <h1>Daily Nutrition & Hydration Tracker</h1>
-  <p id="date-display"></p>
+  <div class="date-picker-row">
+    <label for="date-input">Date:</label>
+    <input type="date" id="date-input" onchange="changeDate(this.value)">
+    <button class="today-btn" onclick="goToToday()">Today</button>
+  </div>
 </header>
 
 <!-- Summary Cards -->
@@ -332,7 +367,7 @@
 
 <!-- Entry Log -->
 <div class="section">
-  <h2>Today's Entries</h2>
+  <h2 id="entries-heading">Entries</h2>
   <div class="entry-list" id="entry-list"></div>
 </div>
 
@@ -346,46 +381,50 @@
   ];
 
   const DEFAULT_GOALS = { water: 64, calories: 2000, protein: 150, carbs: 250, fat: 65 };
-  const STORAGE_KEY = 'tracker';
+  const GOALS_KEY = 'tracker-goals';
 
   function todayStr() {
-    return new Date().toISOString().slice(0, 10);
+    const d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
   }
 
-  function loadState() {
+  function entriesKey(date) { return 'tracker-entries-' + date; }
+
+  function loadGoals() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
+      const raw = localStorage.getItem(GOALS_KEY);
+      if (!raw) return { ...DEFAULT_GOALS };
+      return { ...DEFAULT_GOALS, ...JSON.parse(raw) };
+    } catch { return { ...DEFAULT_GOALS }; }
+  }
+
+  function saveGoals(goals) {
+    localStorage.setItem(GOALS_KEY, JSON.stringify(goals));
+  }
+
+  function loadEntries(date) {
+    try {
+      const raw = localStorage.getItem(entriesKey(date));
+      if (!raw) return [];
       return JSON.parse(raw);
-    } catch { return null; }
+    } catch { return []; }
   }
 
-  function saveState(state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  function saveEntries(date, entries) {
+    localStorage.setItem(entriesKey(date), JSON.stringify(entries));
   }
 
-  function initState() {
-    const today = todayStr();
-    let state = loadState();
-
-    if (!state) {
-      state = { date: today, goals: { ...DEFAULT_GOALS }, entries: [] };
-    } else if (state.date !== today) {
-      // New day — reset entries, keep goals
-      state.date = today;
-      state.entries = [];
-    }
-
-    return state;
-  }
-
-  let state = initState();
+  let selectedDate = todayStr();
+  let goals = loadGoals();
+  let entries = loadEntries(selectedDate);
 
   // ---- Render ----
 
   function totals() {
     const t = { water: 0, calories: 0, protein: 0, carbs: 0, fat: 0 };
-    for (const e of state.entries) {
+    for (const e of entries) {
       for (const m of METRICS) t[m.key] += (e[m.key] || 0);
     }
     return t;
@@ -397,24 +436,23 @@
     container.innerHTML = '';
 
     for (const m of METRICS) {
-      const goal = state.goals[m.key];
+      const goal = goals[m.key];
       const cur = t[m.key];
       const pct = Math.min(100, goal > 0 ? (cur / goal) * 100 : 0);
-      const barColor = pct >= 100 ? '#27ae60' : null; // green when done
+      const barColor = pct >= 100 ? '#27ae60' : null;
 
       const card = document.createElement('div');
       card.className = 'card';
       card.dataset.metric = m.key;
 
       const displayCur = Number.isInteger(cur) ? cur : parseFloat(cur.toFixed(1));
-      const displayGoal = state.goals[m.key];
 
       card.innerHTML = `
         <div class="card-label">${m.label}</div>
-        <div class="card-value">${displayCur} / ${displayGoal} <span class="unit">${m.unit}</span></div>
+        <div class="card-value">${displayCur} / ${goal} <span class="unit">${m.unit}</span></div>
         <div class="goal-row">
           <label>Goal:</label>
-          <input class="goal-input" type="number" min="1" value="${displayGoal}"
+          <input class="goal-input" type="number" min="1" value="${goal}"
             onchange="updateGoal('${m.key}', this.value)">
           <span>${m.unit}</span>
         </div>
@@ -430,13 +468,20 @@
     const list = document.getElementById('entry-list');
     list.innerHTML = '';
 
-    if (state.entries.length === 0) {
-      list.innerHTML = '<div class="empty-state">No entries yet. Add your first entry above.</div>';
+    // Update heading
+    const isToday = selectedDate === todayStr();
+    const displayDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, {
+      weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+    });
+    document.getElementById('entries-heading').textContent =
+      isToday ? "Today's Entries" : 'Entries — ' + displayDate;
+
+    if (entries.length === 0) {
+      list.innerHTML = '<div class="empty-state">No entries for this date.</div>';
       return;
     }
 
-    // Most recent first
-    const sorted = [...state.entries].reverse();
+    const sorted = [...entries].reverse();
     for (const entry of sorted) {
       const item = document.createElement('div');
       item.className = 'entry-item';
@@ -464,21 +509,30 @@
   }
 
   function render() {
-    document.getElementById('date-display').textContent = new Date().toLocaleDateString(undefined, {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
     renderCards();
     renderEntries();
+  }
+
+  // ---- Date navigation ----
+
+  function changeDate(val) {
+    if (!val) return;
+    selectedDate = val;
+    entries = loadEntries(selectedDate);
+    render();
+  }
+
+  function goToToday() {
+    const today = todayStr();
+    document.getElementById('date-input').value = today;
+    changeDate(today);
   }
 
   // ---- Actions ----
 
   function addEntry() {
     const label = document.getElementById('input-label').value.trim();
-    const entry = {
-      id: Date.now(),
-      label,
-    };
+    const entry = { id: Date.now(), label };
 
     let hasValue = false;
     for (const m of METRICS) {
@@ -493,10 +547,9 @@
       return;
     }
 
-    state.entries.push(entry);
-    saveState(state);
+    entries.push(entry);
+    saveEntries(selectedDate, entries);
 
-    // Clear form
     document.getElementById('input-label').value = '';
     for (const m of METRICS) document.getElementById('input-' + m.key).value = '';
 
@@ -504,23 +557,23 @@
   }
 
   function deleteEntry(id) {
-    state.entries = state.entries.filter(e => e.id !== id);
-    saveState(state);
+    entries = entries.filter(e => e.id !== id);
+    saveEntries(selectedDate, entries);
     render();
   }
 
   function updateGoal(metric, value) {
     const v = parseFloat(value);
     if (isNaN(v) || v <= 0) return;
-    state.goals[metric] = v;
-    saveState(state);
+    goals[metric] = v;
+    saveGoals(goals);
     renderCards();
   }
 
   function resetDay() {
-    if (!confirm('Clear all entries for today?')) return;
-    state.entries = [];
-    saveState(state);
+    if (!confirm('Clear all entries for ' + selectedDate + '?')) return;
+    entries = [];
+    saveEntries(selectedDate, entries);
     render();
   }
 
@@ -528,13 +581,14 @@
     return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  // Allow Enter key in form inputs to submit
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && ['INPUT'].includes(e.target.tagName) && e.target.id !== 'input-label') {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.id !== 'input-label' && e.target.id !== 'date-input') {
       addEntry();
     }
   });
 
+  // Init date picker to selected date
+  document.getElementById('date-input').value = selectedDate;
   render();
 </script>
 </body>

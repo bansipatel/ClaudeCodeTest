@@ -159,10 +159,16 @@ class PresentationResolver:
                 out[role_uri] = ""
                 continue
 
+            # Roles that are clearly NOT the primary income statement
+            _is_equity = any(x in uri_last for x in ("equity", "stockholders", "shareholders", "comprehensiveincome", "comprehensiveloss"))
+            _is_cashflow_uri = any(x in uri_last for x in ("cashflow", "cashflows", "cash_flow", "cashactivities"))
+
             # Normalise "statements" -> "statement" for keyword matching
             text = f"{name} {uri_lower}".replace("statements", "statement")
             stype = ""
-            if any(k in text for k in INCOME_STATEMENT_KEYWORDS):
+            if _is_cashflow_uri:
+                stype = "cashflow"
+            elif not _is_equity and any(k in text for k in INCOME_STATEMENT_KEYWORDS):
                 stype = "income"
             elif any(k in text for k in BALANCE_SHEET_KEYWORDS):
                 stype = "balance"
@@ -170,14 +176,11 @@ class PresentationResolver:
                 stype = "cashflow"
 
             # URI token heuristics for camelCase role names (no spaces)
-            if not stype:
-                if any(x in uri_last for x in ("cashflow", "cashflows", "cash_flow")):
-                    stype = "cashflow"
-                elif any(x in uri_last for x in (
+            if not stype and not _is_equity:
+                if any(x in uri_last for x in (
                     "statementsofoperations", "statementofoperations",
                     "statementsofearnings", "statementofearnings",
                     "statementsofincome", "statementofincome",
-                    "consolidatedstatement",
                 )):
                     stype = "income"
                 elif any(x in uri_last for x in ("balancesheets", "balancesheet", "financialposition")):

@@ -90,15 +90,21 @@ class FilingDownloader:
                     return fn
             return None
 
-        instance_fn = pick_one(
-            lambda f: f.lower().endswith(".xml")
-            and not f.lower().endswith(("_pre.xml", "_cal.xml", "_lab.xml", "_def.xml", "_ref.xml"))
-            and "pre" not in f.lower()
-            and "cal" not in f.lower()
-            and "lab" not in f.lower()
-            and "def" not in f.lower()
-            and "ref" not in f.lower()
-        )
+        # Prefer the extracted XBRL instance (_htm.xml) produced from inline XBRL filings
+        instance_fn = pick_one(lambda f: f.lower().endswith("_htm.xml"))
+        # Fallback: any XML that isn't a linkbase, schema, or known non-instance file
+        if not instance_fn:
+            instance_fn = pick_one(
+                lambda f: f.lower().endswith(".xml")
+                and not f.lower().endswith(("_pre.xml", "_cal.xml", "_lab.xml", "_def.xml", "_ref.xml"))
+                and "pre" not in f.lower()
+                and "cal" not in f.lower()
+                and "lab" not in f.lower()
+                and "def" not in f.lower()
+                and "ref" not in f.lower()
+                and "summary" not in f.lower()
+                and "filing" not in f.lower()
+            )
         pre_fn = pick_one(lambda f: f.lower().endswith(("_pre.xml", "pre.xml")))
         lab_fn = pick_one(lambda f: f.lower().endswith(("_lab.xml", "lab.xml")))
         cal_fn = pick_one(lambda f: f.lower().endswith(("_cal.xml", "cal.xml")))

@@ -681,7 +681,12 @@ function joinGame() {
 
       let assignedSlot = null;
       ref.child('players').transaction(players => {
-        if (!players) return;
+        // Firebase may call this with null on the first attempt if it has no
+        // cached value yet (no listener has been attached to this path). Do
+        // NOT abort on null — supply the known invariant (p1 always exists)
+        // as a best guess; Firebase re-runs this function with the real
+        // server data if that guess turns out to be stale.
+        if (!players) players = { p1: true, p2: false, p3: false };
         if (!players.p2) { assignedSlot = 2; players.p2 = true; }
         else if (!players.p3) { assignedSlot = 3; players.p3 = true; }
         else { assignedSlot = null; return; }

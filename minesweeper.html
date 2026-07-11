@@ -399,7 +399,7 @@
 
 <!-- ==================== LOBBY ==================== -->
 <div id="screen-lobby">
-  <h1>Minesweeper<br><span style="font-size:0.5em;">Best of 5 · Last One Standing</span></h1>
+  <h1>Minesweeper<br><span style="font-size:0.5em;">First to 2 · Last One Standing</span></h1>
 
   <div id="config-warning">
     <strong>Firebase not configured</strong>
@@ -420,7 +420,7 @@
     One shared board. Take turns revealing cells — 20s shot clock per turn.
     Hit a mine or run out of time and you're eliminated (the round keeps going for the other two).
     Round winner is the last one standing, or whoever reveals the last safe cell if the board clears first.
-    First to win 3 rounds takes the match.
+    First to win 2 rounds takes the match.
   </p>
 </div>
 
@@ -440,7 +440,7 @@
   <h1>Minesweeper</h1>
 
   <div class="game-header">
-    <div class="eyebrow" id="round-label">Round 1 · Best of 5</div>
+    <div class="eyebrow" id="round-label">Round 1 · First to 2</div>
     <div id="shot-clock" class="clock-pill" style="display:none">
       <span>⏱</span><span id="clock-seconds">20s</span>
     </div>
@@ -520,7 +520,7 @@ const TOTAL = ROWS * COLS;
 const SAFE_TOTAL = TOTAL - MINES;
 const TURN_MS = 20000;
 const NEXT_ROUND_DELAY_MS = 5000;
-const ROUNDS_TO_WIN_MATCH = 3; // best of 5 = first to 3
+const ROUNDS_TO_WIN_MATCH = 2; // first player to win 2 rounds takes the match
 
 const PLAYER_LABEL = { 1: 'Player 1', 2: 'Player 2', 3: 'Player 3' };
 
@@ -1020,7 +1020,7 @@ function renderStatus() {
   document.getElementById('player-badge').textContent = 'You are ' + PLAYER_LABEL[myPlayer];
 
   const roundLabel = document.getElementById('round-label');
-  roundLabel.textContent = room.matchOver ? 'Match Complete' : `Round ${room.round} · Best of 5`;
+  roundLabel.textContent = room.matchOver ? 'Match Complete' : `Round ${room.round} · First to 2`;
 
   const status = document.getElementById('status');
   status.className = '';

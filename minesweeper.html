@@ -393,6 +393,65 @@
       line-height: 1.5;
       display: none;
     }
+
+    #player-name-input {
+      width: 100%;
+      text-align: left;
+      text-transform: none;
+      letter-spacing: 0.2px;
+    }
+
+    /* ---- MINE HIT: cracked-screen effect ---- */
+    #crack-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0;
+    }
+
+    #crack-overlay svg { width: 100%; height: 100%; display: block; }
+
+    #crack-overlay path {
+      fill: none;
+      stroke: rgba(255,255,255,0.92);
+      stroke-width: 0.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      stroke-dasharray: 140;
+      stroke-dashoffset: 140;
+      filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
+    }
+
+    #crack-overlay.show {
+      animation: crack-flash 1.1s ease-out forwards;
+    }
+
+    #crack-overlay.show path {
+      animation: crack-draw 0.3s ease-out forwards;
+    }
+
+    @keyframes crack-draw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes crack-flash {
+      0%   { opacity: 0; background: rgba(138,51,36,0); }
+      6%   { opacity: 1; background: rgba(138,51,36,0.38); }
+      18%  { background: rgba(138,51,36,0.1); }
+      100% { opacity: 0; background: rgba(138,51,36,0); }
+    }
+
+    @keyframes screen-shake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-6px, 4px); }
+      40% { transform: translate(6px, -3px); }
+      60% { transform: translate(-4px, -5px); }
+      80% { transform: translate(4px, 5px); }
+    }
+
+    body.shake { animation: screen-shake 0.4s ease-in-out; }
   </style>
 </head>
 <body>
@@ -408,6 +467,7 @@
 
   <div class="lobby-group">
     <h3>Play Online (3 players)</h3>
+    <input type="text" id="player-name-input" placeholder="Your name" maxlength="16">
     <button class="btn-primary" onclick="createGame()" style="width:100%">Create Game</button>
     <div class="lobby-divider">or join one</div>
     <div style="display:flex;gap:8px;width:100%">
@@ -499,6 +559,19 @@
   <div id="room-info"></div>
 </div>
 
+<div id="crack-overlay">
+  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+    <path d="M50,50 L46,38 L52,30 L44,18 L50,4" style="animation-delay:0s"/>
+    <path d="M50,50 L62,42 L58,28 L70,20 L64,6" style="animation-delay:0.02s"/>
+    <path d="M50,50 L64,56 L78,50 L88,58 L98,50" style="animation-delay:0.04s"/>
+    <path d="M50,50 L58,64 L52,76 L60,88 L54,98" style="animation-delay:0.06s"/>
+    <path d="M50,50 L40,60 L28,54 L14,62 L2,56" style="animation-delay:0.03s"/>
+    <path d="M50,50 L38,42 L24,46 L10,36 L2,40" style="animation-delay:0.05s"/>
+    <path d="M50,50 L44,66 L30,68 L20,80 L6,78" style="animation-delay:0.07s"/>
+    <path d="M50,50 L60,36 L74,38 L84,26 L96,30" style="animation-delay:0.01s"/>
+  </svg>
+</div>
+
 <script>
 // ============================================================
 //  FIREBASE CONFIG — reused from connect4.html (same project,
@@ -535,6 +608,16 @@ let clockInterval = null;
 let lastTimeoutAttempt = { version: -1, at: 0 };
 let lastRoundAdvanceAttempt = { round: -1, at: 0 };
 let db = null;
+let crackedForRound = null;
+
+function getPlayerName(fallback) {
+  const val = document.getElementById('player-name-input').value.trim();
+  return val ? val.slice(0, 16) : fallback;
+}
+
+function playerName(p) {
+  return (room && room.names && room.names[p]) || PLAYER_LABEL[p];
+}
 
 // ---- Firebase ----
 function isFirebaseConfigured() {
@@ -774,10 +857,11 @@ function cancelOnline() {
 }
 
 // ---- Create / Join ----
-function initialRoomState() {
+function initialRoomState(hostName) {
   return {
     status: 'waiting',
     players: { p1: true, p2: false, p3: false },
+    names: { 1: hostName, 2: '', 3: '' },
     round: 1,
     matchScore: { 1: 0, 2: 0, 3: 0 },
     matchOver: false,
@@ -810,7 +894,7 @@ function createGame() {
     myPlayer = 1;
 
     roomRef = db.ref('minesweeper_rooms/' + code);
-    roomRef.set(initialRoomState());
+    roomRef.set(initialRoomState(getPlayerName(PLAYER_LABEL[1])));
     roomRef.onDisconnect().remove();
 
     document.getElementById('display-code').textContent = code;
@@ -854,6 +938,7 @@ function joinGame() {
         roomCode = code;
         roomRef = ref;
         roomRef.child('players/p' + assignedSlot).onDisconnect().set(false);
+        roomRef.child('names/' + assignedSlot).set(getPlayerName(PLAYER_LABEL[assignedSlot]));
 
         showScreen('screen-waiting');
         watchForStart();
@@ -878,7 +963,7 @@ function watchForStart() {
   const handler = roomRef.on('value', snap => {
     if (!snap.exists()) { alert('The host left — room closed.'); goLobby(); return; }
     const data = snap.val();
-    renderWaitingRoster(data.players || { p1: false, p2: false, p3: false });
+    renderWaitingRoster(data.players || { p1: false, p2: false, p3: false }, data.names || {});
     if (data.status === 'playing') {
       detachWaitingListener();
       startGameScreen();
@@ -891,20 +976,22 @@ function detachWaitingListener() {
   if (waitingUnsubscribe) { waitingUnsubscribe(); waitingUnsubscribe = null; }
 }
 
-function renderWaitingRoster(players) {
+function renderWaitingRoster(players, names) {
   const el = document.getElementById('waiting-roster');
   el.innerHTML = '';
   [1, 2, 3].forEach(p => {
     const joined = !!players['p' + p];
     const row = document.createElement('div');
     row.className = 'roster-row' + (joined ? ' joined' : '');
-    row.textContent = PLAYER_LABEL[p] + (p === myPlayer ? ' (you)' : '') + (joined ? ' — ready' : ' — waiting…');
+    const label = (names && names[p]) || PLAYER_LABEL[p];
+    row.textContent = label + (p === myPlayer ? ' (you)' : '') + (joined ? ' — ready' : ' — waiting…');
     el.appendChild(row);
   });
 }
 
 // ---- Game screen ----
 function startGameScreen() {
+  crackedForRound = null;
   showScreen('screen-game');
   document.getElementById('room-info').textContent = 'Room: ' + roomCode;
   listenToGame();
@@ -1007,7 +1094,7 @@ function renderStandings() {
     row.classList.toggle('eliminated', isEliminated);
     row.classList.toggle('active', isActive);
 
-    document.getElementById('name-p' + p).textContent = p === myPlayer ? 'You' : PLAYER_LABEL[p];
+    document.getElementById('name-p' + p).textContent = p === myPlayer ? 'You' : playerName(p);
     document.getElementById('tag-p' + p).textContent = isEliminated ? 'Eliminated' : (isActive ? 'Turn' : '');
 
     const wins = (room.matchScore && room.matchScore[p]) || 0;
@@ -1017,7 +1104,7 @@ function renderStandings() {
 }
 
 function renderStatus() {
-  document.getElementById('player-badge').textContent = 'You are ' + PLAYER_LABEL[myPlayer];
+  document.getElementById('player-badge').textContent = 'You are ' + playerName(myPlayer);
 
   const roundLabel = document.getElementById('round-label');
   roundLabel.textContent = room.matchOver ? 'Match Complete' : `Round ${room.round} · First to 2`;
@@ -1025,14 +1112,14 @@ function renderStatus() {
   const status = document.getElementById('status');
   status.className = '';
   if (room.matchOver) {
-    status.textContent = `${PLAYER_LABEL[room.matchWinner]} wins the match!`;
+    status.textContent = `${playerName(room.matchWinner)} wins the match!`;
     status.classList.add('win');
   } else if (room.gameOver) {
     const reasonText = room.winReason === 'boardCleared' ? 'cleared the board' : 'was the last one standing';
-    status.textContent = `${PLAYER_LABEL[room.winner]} wins Round ${room.round} — ${reasonText}! Next round starting…`;
+    status.textContent = `${playerName(room.winner)} wins Round ${room.round} — ${reasonText}! Next round starting…`;
     status.classList.add('win');
   } else {
-    status.textContent = room.currentTurn === myPlayer ? 'Your turn — pick a cell!' : `${PLAYER_LABEL[room.currentTurn]}'s turn`;
+    status.textContent = room.currentTurn === myPlayer ? 'Your turn — pick a cell!' : `${playerName(room.currentTurn)}'s turn`;
     status.classList.add('turn-p' + room.currentTurn);
   }
 
@@ -1041,9 +1128,24 @@ function renderStatus() {
     const hitMine = room.mines && room.owner.some((o, i) => o === myPlayer && room.mines[i] === 1);
     banner.textContent = hitMine ? 'You hit a mine — spectating the rest of the game' : 'You ran out of time — spectating the rest of the game';
     banner.style.display = 'block';
+    if (hitMine) triggerCrackEffect();
   } else {
     banner.style.display = 'none';
   }
+}
+
+function triggerCrackEffect() {
+  if (crackedForRound === room.round) return;
+  crackedForRound = room.round;
+
+  const overlay = document.getElementById('crack-overlay');
+  overlay.classList.remove('show');
+  void overlay.offsetWidth; // restart CSS animation from a clean state
+  overlay.classList.add('show');
+
+  document.body.classList.remove('shake');
+  void document.body.offsetWidth;
+  document.body.classList.add('shake');
 }
 
 function renderBoard() {

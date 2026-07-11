@@ -134,6 +134,7 @@
 
     .chip-name { font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.9; }
     .chip-status { font-size: 0.7rem; height: 14px; }
+    .chip-wins { font-size: 0.65rem; letter-spacing: 2px; margin-top: 2px; opacity: 0.9; }
 
     #player-badge {
       font-size: 0.82rem;
@@ -316,7 +317,7 @@
 
 <!-- ==================== LOBBY ==================== -->
 <div id="screen-lobby">
-  <h1>Minesweeper<br><span style="font-size:0.5em;">Last One Standing</span></h1>
+  <h1>Minesweeper<br><span style="font-size:0.5em;">Best of 5 · Last One Standing</span></h1>
 
   <div id="config-warning">
     <strong>Firebase not configured</strong>
@@ -334,9 +335,10 @@
   </div>
 
   <p class="lobby-rules">
-    One shared board. Take turns revealing cells — 15s shot clock per turn.
-    Hit a mine or run out of time and you're eliminated (the game keeps going for the other two).
-    Last player standing wins, or whoever reveals the last safe cell if the board clears first.
+    One shared board. Take turns revealing cells — 20s shot clock per turn.
+    Hit a mine or run out of time and you're eliminated (the round keeps going for the other two).
+    Round winner is the last one standing, or whoever reveals the last safe cell if the board clears first.
+    First to win 3 rounds takes the match.
   </p>
 </div>
 
@@ -359,14 +361,17 @@
     <div class="chip p1" id="chip-p1">
       <div class="chip-name">Player 1</div>
       <div class="chip-status"></div>
+      <div class="chip-wins"></div>
     </div>
     <div class="chip p2" id="chip-p2">
       <div class="chip-name">Player 2</div>
       <div class="chip-status"></div>
+      <div class="chip-wins"></div>
     </div>
     <div class="chip p3" id="chip-p3">
       <div class="chip-name">Player 3</div>
       <div class="chip-status"></div>
+      <div class="chip-wins"></div>
     </div>
   </div>
 
@@ -375,7 +380,7 @@
   <div id="status"></div>
 
   <div id="shot-clock">
-    <div id="clock-seconds">15s</div>
+    <div id="clock-seconds">20s</div>
     <div class="clock-track"><div id="clock-bar" style="width:100%"></div></div>
   </div>
 
@@ -408,7 +413,9 @@ const FIREBASE_CONFIG = {
 const ROWS = 9, COLS = 9, MINES = 10;
 const TOTAL = ROWS * COLS;
 const SAFE_TOTAL = TOTAL - MINES;
-const TURN_MS = 15000;
+const TURN_MS = 20000;
+const NEXT_ROUND_DELAY_MS = 5000;
+const ROUNDS_TO_WIN_MATCH = 3; // best of 5 = first to 3
 
 const PLAYER_LABEL = { 1: 'Player 1', 2: 'Player 2', 3: 'Player 3' };
 
@@ -421,6 +428,7 @@ let waitingUnsubscribe = null;
 let gameUnsubscribe = null;
 let clockInterval = null;
 let lastTimeoutAttempt = { version: -1, at: 0 };
+let lastRoundAdvanceAttempt = { round: -1, at: 0 };
 let db = null;
 
 // ---- Firebase ----
@@ -524,15 +532,43 @@ function eliminate(room, player) {
   room.eliminatedCount++;
   if (room.eliminatedCount >= 2) {
     const survivor = [1, 2, 3].find(p => !room.eliminated[p]);
-    finishGame(room, survivor, 'lastStanding');
+    finishRound(room, survivor, 'lastStanding');
   }
 }
 
-function finishGame(room, winner, reason) {
+function finishRound(room, winner, reason) {
   room.gameOver = true;
   room.status = 'over';
   room.winner = winner;
   room.winReason = reason;
+  room.roundEndedAt = Date.now();
+  room.matchScore[winner] = (room.matchScore[winner] || 0) + 1;
+  if (room.matchScore[winner] >= ROUNDS_TO_WIN_MATCH) {
+    room.matchOver = true;
+    room.matchWinner = winner;
+  }
+}
+
+function applyNextRound(room, expectedRound) {
+  if (!room || room.status !== 'over' || room.matchOver) return;
+  if (room.round !== expectedRound) return;
+
+  const nextRound = room.round + 1;
+  room.round = nextRound;
+  room.mines = null;
+  room.revealed = Array(TOTAL).fill(0);
+  room.owner = Array(TOTAL).fill(0);
+  room.firstClickDone = false;
+  room.safeRevealedCount = 0;
+  room.eliminated = { 1: false, 2: false, 3: false };
+  room.eliminatedCount = 0;
+  room.currentTurn = ((nextRound - 1) % 3) + 1; // rotate who opens each round
+  room.turnVersion = 0;
+  room.turnStartedAt = Date.now();
+  room.gameOver = false;
+  room.winner = 0;
+  room.winReason = null;
+  room.status = 'playing';
 }
 
 function advanceTurn(room) {
@@ -565,7 +601,7 @@ function applyMoveToRoom(room, action) {
       const gained = floodFill(room.mines, room.revealed, room.owner, player, i);
       room.safeRevealedCount += gained;
       if (room.safeRevealedCount >= SAFE_TOTAL && room.eliminatedCount < 2) {
-        finishGame(room, player, 'boardCleared');
+        finishRound(room, player, 'boardCleared');
       }
     }
   } else if (action.type === 'timeout') {
@@ -592,6 +628,15 @@ function attemptTimeout(expectedTurnVersion) {
   roomRef.transaction(current => {
     if (!current) return current;
     applyMoveToRoom(current, { type: 'timeout', expectedTurnVersion });
+    return current;
+  });
+}
+
+function attemptNextRound(expectedRound) {
+  if (!roomRef) return;
+  roomRef.transaction(current => {
+    if (!current) return current;
+    applyNextRound(current, expectedRound);
     return current;
   });
 }
@@ -628,6 +673,10 @@ function initialRoomState() {
   return {
     status: 'waiting',
     players: { p1: true, p2: false, p3: false },
+    round: 1,
+    matchScore: { 1: 0, 2: 0, 3: 0 },
+    matchOver: false,
+    matchWinner: 0,
     mines: null,
     revealed: Array(TOTAL).fill(0),
     owner: Array(TOTAL).fill(0),
@@ -640,7 +689,8 @@ function initialRoomState() {
     turnStartedAt: Date.now(),
     gameOver: false,
     winner: 0,
-    winReason: null
+    winReason: null,
+    roundEndedAt: 0
   };
 }
 
@@ -782,27 +832,44 @@ function stopClockTicker() {
 }
 
 function tick() {
-  if (!room || room.gameOver || room.status !== 'playing') {
-    updateClockUI(0);
+  if (!room) { updateClockUI(null, TURN_MS); return; }
+
+  if (room.status === 'playing' && !room.gameOver) {
+    const remaining = TURN_MS - (Date.now() - room.turnStartedAt);
+    updateClockUI(remaining, TURN_MS);
+
+    if (remaining <= 0) {
+      const isActivePlayer = myPlayer === room.currentTurn;
+      const graceOk = isActivePlayer || (Date.now() - room.turnStartedAt) > TURN_MS + 1200;
+      const staleEnough = room.turnVersion !== lastTimeoutAttempt.version || (Date.now() - lastTimeoutAttempt.at) > 3000;
+      if (graceOk && staleEnough) {
+        lastTimeoutAttempt = { version: room.turnVersion, at: Date.now() };
+        attemptTimeout(room.turnVersion);
+      }
+    }
     return;
   }
-  const remaining = TURN_MS - (Date.now() - room.turnStartedAt);
-  updateClockUI(remaining);
 
-  if (remaining <= 0) {
-    const isActivePlayer = myPlayer === room.currentTurn;
-    const graceOk = isActivePlayer || (Date.now() - room.turnStartedAt) > TURN_MS + 1200;
-    const staleEnough = room.turnVersion !== lastTimeoutAttempt.version || (Date.now() - lastTimeoutAttempt.at) > 3000;
-    if (graceOk && staleEnough) {
-      lastTimeoutAttempt = { version: room.turnVersion, at: Date.now() };
-      attemptTimeout(room.turnVersion);
+  if (room.gameOver && !room.matchOver) {
+    const remaining = NEXT_ROUND_DELAY_MS - (Date.now() - room.roundEndedAt);
+    updateClockUI(remaining, NEXT_ROUND_DELAY_MS);
+
+    if (remaining <= 0) {
+      const staleEnough = room.round !== lastRoundAdvanceAttempt.round || (Date.now() - lastRoundAdvanceAttempt.at) > 3000;
+      if (staleEnough) {
+        lastRoundAdvanceAttempt = { round: room.round, at: Date.now() };
+        attemptNextRound(room.round);
+      }
     }
+    return;
   }
+
+  updateClockUI(null, TURN_MS);
 }
 
-function updateClockUI(remainingMs) {
+function updateClockUI(remainingMs, totalMs) {
   const wrapEl = document.getElementById('shot-clock');
-  if (!room || room.gameOver || room.status !== 'playing') {
+  if (remainingMs === null) {
     wrapEl.style.display = 'none';
     return;
   }
@@ -810,8 +877,8 @@ function updateClockUI(remainingMs) {
   const clamped = Math.max(0, remainingMs);
   const seconds = Math.ceil(clamped / 1000);
   document.getElementById('clock-seconds').textContent = seconds + 's';
-  document.getElementById('clock-bar').style.width = ((clamped / TURN_MS) * 100) + '%';
-  wrapEl.classList.toggle('urgent', seconds <= 5);
+  document.getElementById('clock-bar').style.width = ((clamped / totalMs) * 100) + '%';
+  wrapEl.classList.toggle('urgent', totalMs === TURN_MS && seconds <= 5);
 }
 
 // ---- Render ----
@@ -829,6 +896,9 @@ function renderScoreboard() {
     chip.classList.toggle('eliminated', !!room.eliminated[p]);
     const statusEl = chip.querySelector('.chip-status');
     statusEl.textContent = room.eliminated[p] ? 'Eliminated' : (!room.gameOver && room.currentTurn === p ? 'Turn' : '');
+    const winsEl = chip.querySelector('.chip-wins');
+    const wins = (room.matchScore && room.matchScore[p]) || 0;
+    winsEl.textContent = '●'.repeat(wins) + '○'.repeat(Math.max(0, ROUNDS_TO_WIN_MATCH * 2 - 1 - wins));
   });
 }
 
@@ -837,9 +907,12 @@ function renderStatus() {
 
   const status = document.getElementById('status');
   status.className = '';
-  if (room.gameOver) {
-    const reasonText = room.winReason === 'boardCleared' ? 'cleared the board' : 'is the last one standing';
-    status.textContent = `${PLAYER_LABEL[room.winner]} wins — ${reasonText}!`;
+  if (room.matchOver) {
+    status.textContent = `${PLAYER_LABEL[room.matchWinner]} wins the match!`;
+    status.classList.add('win');
+  } else if (room.gameOver) {
+    const reasonText = room.winReason === 'boardCleared' ? 'cleared the board' : 'was the last one standing';
+    status.textContent = `${PLAYER_LABEL[room.winner]} wins Round ${room.round} — ${reasonText}! Next round starting…`;
     status.classList.add('win');
   } else {
     status.textContent = room.currentTurn === myPlayer ? 'Your turn — pick a cell!' : `${PLAYER_LABEL[room.currentTurn]}'s turn`;

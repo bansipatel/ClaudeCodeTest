@@ -811,7 +811,13 @@ function startGameScreen() {
   listenToGame();
 }
 
+let keypadBound = false;
 function bindKeypad() {
+  // The keypad buttons are static DOM nodes reused across every game in this
+  // tab (startGameScreen runs again on each new match), so binding more than
+  // once stacks duplicate click listeners and double-fires every tap.
+  if (keypadBound) return;
+  keypadBound = true;
   document.querySelectorAll('.key[data-d]').forEach(btn => {
     btn.addEventListener('click', () => tapDigit(Number(btn.dataset.d)));
   });

@@ -604,6 +604,11 @@ function applyGuessToRoom(room, player, digits, expectedRound) {
   if (room.round !== expectedRound) return;
 
   const pegs = scoreGuess(room.secret, digits);
+  // Firebase prunes empty arrays/objects on write, so a room whose guesses
+  // are all still [] (fresh game or fresh round) comes back with no
+  // 'guesses' node at all rather than { 1: [], 2: [], 3: [] }. Rebuild it
+  // here instead of assuming it survived the round trip.
+  if (!room.guesses) room.guesses = { 1: [], 2: [], 3: [] };
   if (!room.guesses[player]) room.guesses[player] = [];
   room.guesses[player].push({ digits, pegs });
   room.guessCount[player] = (room.guessCount[player] || 0) + 1;

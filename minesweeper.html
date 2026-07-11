@@ -4,13 +4,30 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Minesweeper — 3 Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
 
     :root {
-      --p1-primary: #e0368a; --p1-light: #f9a8d4;
-      --p2-primary: #2563eb; --p2-light: #93c5fd;
-      --p3-primary: #16a34a; --p3-light: #86efac;
+      --bg-page: #efe9dc;
+      --bg-card: #fbf8f1;
+      --bg-panel: #ece3d2;
+      --bg-tile: #ffffff;
+      --text-primary: #2f2a22;
+      --text-muted: #9a9080;
+      --heading: #a5432a;
+      --heading-dark: #7a3220;
+      --accent-teal: #5f8575;
+      --accent-teal-dark: #45705f;
+      --accent-teal-light: #cfe0d6;
+      --pill-bg: #5c3527;
+      --danger: #8a3324;
+      --border-soft: #e0d7c2;
+      --p1-primary: #a5432a; --p1-light: #d98f6f;
+      --p2-primary: #45705f; --p2-light: #8fb3a2;
+      --p3-primary: #5c3527; --p3-light: #a5806e;
     }
 
     body {
@@ -19,22 +36,29 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #fce4f3 0%, #dce9ff 50%, #e3fbe8 100%);
-      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg-page);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      color: var(--text-primary);
       padding: 20px;
       overflow-x: hidden;
     }
 
     h1 {
-      font-size: 2.1rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      margin-bottom: 20px;
-      background: linear-gradient(90deg, #e05aaa, #5a8de0, #3fae6a);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin-bottom: 18px;
+      color: var(--heading);
       text-align: center;
+    }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-weight: 700;
     }
 
     /* ---- LOBBY ---- */
@@ -45,27 +69,29 @@
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      background: rgba(255,255,255,0.6);
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
       border-radius: 18px;
       padding: 20px 28px;
-      box-shadow: 0 4px 20px rgba(140,80,180,0.10);
+      box-shadow: 0 4px 20px rgba(90,60,30,0.08);
       width: 300px;
     }
 
     .lobby-group h3 {
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 2px;
-      color: #aaa;
+      color: var(--text-muted);
+      font-weight: 700;
       margin-bottom: 4px;
     }
 
-    .lobby-divider { font-size: 0.8rem; color: #bbb; margin: 2px 0; }
+    .lobby-divider { font-size: 0.8rem; color: var(--text-muted); margin: 2px 0; }
 
     .lobby-rules {
       font-size: 0.8rem;
-      color: #888;
-      line-height: 1.5;
+      color: var(--text-muted);
+      line-height: 1.6;
       max-width: 300px;
       text-align: center;
     }
@@ -74,14 +100,15 @@
     #screen-waiting { display: none; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
 
     .room-code-box {
-      background: #fff;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
       border-radius: 16px;
       padding: 18px 36px;
-      box-shadow: 0 4px 20px rgba(140,80,180,0.12);
+      box-shadow: 0 4px 20px rgba(90,60,30,0.10);
     }
 
-    .room-code-box .label { font-size: 0.8rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
-    .room-code-box .code  { font-size: 2.8rem; font-weight: 900; letter-spacing: 8px; color: #7c3aed; }
+    .room-code-box .label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+    .room-code-box .code  { font-family: 'Fraunces', Georgia, serif; font-size: 2.6rem; font-weight: 700; letter-spacing: 8px; color: var(--heading); }
 
     #waiting-roster {
       display: flex;
@@ -93,122 +120,98 @@
     .roster-row {
       padding: 10px 16px;
       border-radius: 12px;
-      background: rgba(255,255,255,0.55);
-      color: #999;
+      background: var(--bg-panel);
+      color: var(--text-muted);
       font-weight: 600;
       font-size: 0.9rem;
     }
 
-    .roster-row.joined { background: rgba(255,255,255,0.9); color: #333; }
+    .roster-row.joined { background: var(--accent-teal-light); color: var(--accent-teal-dark); }
 
     /* ---- GAME ---- */
     #screen-game { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 440px; }
 
-    #scoreboard {
+    .game-header {
       display: flex;
-      gap: 8px;
-      margin-bottom: 14px;
-      width: 100%;
-      justify-content: center;
+      align-items: center;
+      justify-content: space-between;
+      width: min(94vw, 420px);
+      margin-bottom: 8px;
     }
 
-    .chip {
-      text-align: center;
-      padding: 8px 10px;
-      border-radius: 12px;
-      font-weight: 700;
+    .clock-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--pill-bg);
       color: #fff;
-      flex: 1;
-      max-width: 130px;
-      opacity: 0.55;
-      transform: scale(0.96);
-      transition: opacity 0.2s, transform 0.2s;
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 6px 14px;
+      border-radius: 20px;
+      transition: background 0.2s;
     }
 
-    .chip.p1 { background: linear-gradient(135deg, var(--p1-light), var(--p1-primary)); }
-    .chip.p2 { background: linear-gradient(135deg, var(--p2-light), var(--p2-primary)); }
-    .chip.p3 { background: linear-gradient(135deg, var(--p3-light), var(--p3-primary)); }
+    .clock-pill.urgent { background: var(--danger); }
 
-    .chip.active { opacity: 1; transform: scale(1.05); box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
-    .chip.eliminated { opacity: 0.3; filter: grayscale(0.6); }
+    .clock-track {
+      width: min(94vw, 420px);
+      height: 4px;
+      border-radius: 4px;
+      background: var(--border-soft);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
 
-    .chip-name { font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.9; }
-    .chip-status { font-size: 0.7rem; height: 14px; }
-    .chip-wins { font-size: 0.65rem; letter-spacing: 2px; margin-top: 2px; opacity: 0.9; }
+    #clock-bar {
+      height: 100%;
+      background: var(--accent-teal);
+      transition: width 0.2s linear;
+    }
+
+    #clock-bar.urgent { background: var(--danger); }
 
     #player-badge {
       font-size: 0.82rem;
       font-weight: 600;
-      color: #888;
+      color: var(--text-muted);
       margin-bottom: 6px;
     }
 
     #spectator-banner {
       display: none;
-      background: #fff3cd;
-      border: 2px solid #ffc107;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
       border-radius: 10px;
       padding: 8px 14px;
       font-size: 0.82rem;
       font-weight: 700;
-      color: #856404;
+      color: var(--heading-dark);
       margin-bottom: 10px;
       text-align: center;
     }
 
     #status {
-      font-size: 1.05rem;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: 10px;
-      height: 26px;
-      color: #555;
+      margin-bottom: 14px;
+      min-height: 28px;
+      color: var(--text-primary);
       text-align: center;
     }
 
     #status.turn-p1 { color: var(--p1-primary); }
     #status.turn-p2 { color: var(--p2-primary); }
     #status.turn-p3 { color: var(--p3-primary); }
-    #status.win { color: #333; font-size: 1.2rem; }
-
-    #shot-clock {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      width: min(94vw, 420px);
-      margin-bottom: 10px;
-    }
-
-    #clock-seconds {
-      font-size: 0.8rem;
-      font-weight: 800;
-      color: #7c3aed;
-      letter-spacing: 1px;
-    }
-
-    #shot-clock.urgent #clock-seconds { color: #dc2626; }
-
-    .clock-track {
-      width: 100%;
-      height: 6px;
-      border-radius: 4px;
-      background: rgba(0,0,0,0.08);
-      overflow: hidden;
-    }
-
-    #clock-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #7c3aed, #5a8de0);
-      transition: width 0.2s linear;
-    }
-
-    #shot-clock.urgent #clock-bar { background: #dc2626; }
+    #status.win { color: var(--heading); font-size: 1.25rem; }
 
     #board-wrap {
-      background: linear-gradient(160deg, #c7d7ff, #f7c8ee);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
       border-radius: 18px;
       padding: 8px;
-      box-shadow: 0 8px 32px rgba(120,80,180,0.18), 0 2px 8px rgba(0,0,0,0.08);
+      box-shadow: 0 8px 28px rgba(90,60,30,0.10);
       width: min(94vw, 420px);
       aspect-ratio: 1 / 1;
     }
@@ -227,42 +230,118 @@
       align-items: center;
       justify-content: center;
       border-radius: 6px;
-      background: rgba(255,255,255,0.65);
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+      background: var(--bg-tile);
+      box-shadow: 0 1px 2px rgba(90,60,30,0.12);
       font-weight: 800;
       font-size: clamp(12px, 3.2vw, 18px);
       touch-action: manipulation;
       transition: background 0.15s, transform 0.1s;
     }
 
-    .cell.clickable { cursor: pointer; }
+    .cell.clickable { cursor: pointer; box-shadow: 0 1px 2px rgba(90,60,30,0.12), inset 0 0 0 1.5px var(--accent-teal-light); }
     .cell.clickable:active { transform: scale(0.92); }
 
     .cell.revealed {
-      background: rgba(255,255,255,0.92);
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.10);
+      background: var(--bg-panel);
+      box-shadow: inset 0 1px 3px rgba(90,60,30,0.15);
     }
 
     .cell.mine {
-      background: linear-gradient(135deg, #fca5a5, #dc2626);
+      background: var(--danger);
       color: #fff;
       flex-direction: column;
       gap: 0;
     }
 
     .mine-icon { font-size: 1em; line-height: 1; }
-    .mine-owner { font-size: 0.5em; font-weight: 700; opacity: 0.85; }
+    .mine-owner { font-size: 0.5em; font-weight: 700; opacity: 0.9; }
 
-    .cell.num-1 { color: #2563eb; }
-    .cell.num-2 { color: #16a34a; }
-    .cell.num-3 { color: #dc2626; }
-    .cell.num-4 { color: #7c3aed; }
-    .cell.num-5 { color: #991b1b; }
-    .cell.num-6 { color: #0d9488; }
-    .cell.num-7 { color: #111827; }
-    .cell.num-8 { color: #6b7280; }
+    .cell.num-1 { color: #3f6f8f; }
+    .cell.num-2 { color: #5f8f4f; }
+    .cell.num-3 { color: #b5622f; }
+    .cell.num-4 { color: #7a5aa0; }
+    .cell.num-5 { color: #8a3324; }
+    .cell.num-6 { color: #2f7a6f; }
+    .cell.num-7 { color: #2f2a22; }
+    .cell.num-8 { color: #9a9080; }
 
-    #controls { display: flex; gap: 12px; margin-top: 20px; }
+    /* ---- LIVE STANDINGS ---- */
+    .section-divider { height: 1px; background: var(--border-soft); width: min(94vw, 420px); margin: 18px 0 14px; }
+
+    #standings {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: min(94vw, 420px);
+      margin-bottom: 8px;
+    }
+
+    .standing-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: opacity 0.2s;
+    }
+
+    .standing-row.eliminated { opacity: 0.45; }
+
+    .avatar {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px dashed var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      background: var(--bg-card);
+    }
+
+    .standing-row.active .avatar { border-style: solid; border-color: var(--accent-teal); color: var(--accent-teal-dark); }
+
+    .standing-body { flex: 1; min-width: 0; }
+
+    .standing-top {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .standing-name { font-weight: 700; font-size: 0.95rem; color: var(--text-primary); }
+
+    .standing-status {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent-teal-dark);
+    }
+
+    .standing-row.eliminated .standing-status { color: var(--danger); }
+
+    .standing-frac { margin-left: auto; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+
+    .standing-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 4px;
+      background: var(--border-soft);
+      overflow: hidden;
+    }
+
+    .standing-fill {
+      height: 100%;
+      background: var(--accent-teal);
+      transition: width 0.3s ease;
+    }
+
+    .standing-row.eliminated .standing-fill { background: var(--text-muted); }
+
+    #controls { display: flex; gap: 12px; margin-top: 8px; }
 
     button {
       padding: 10px 28px;
@@ -272,19 +351,21 @@
       font-weight: 700;
       cursor: pointer;
       transition: transform 0.12s, box-shadow 0.12s;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
     }
 
-    button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(90,60,30,0.15); }
     button:active { transform: translateY(0); }
 
-    .btn-primary { background: linear-gradient(90deg, #f472b6, #60a5fa); color: #fff; }
-    .btn-secondary { background: #fff; color: #555; border: 2px solid #c4b5fd; }
-    .btn-danger { background: #fee2e2; color: #b91c1c; border: 2px solid #fca5a5; }
+    .btn-primary { background: var(--accent-teal); color: #fff; }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 2px solid var(--border-soft); }
+    .btn-danger { background: var(--bg-card); color: var(--danger); border: 2px solid var(--danger); }
 
     input[type="text"] {
       padding: 10px 16px;
       border-radius: 30px;
-      border: 2px solid #c4b5fd;
+      border: 2px solid var(--border-soft);
+      background: var(--bg-card);
       font-size: 1rem;
       font-weight: 700;
       text-align: center;
@@ -292,22 +373,23 @@
       text-transform: uppercase;
       width: 160px;
       outline: none;
-      color: #7c3aed;
+      color: var(--heading);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
     }
 
-    input[type="text"]:focus { border-color: #7c3aed; }
+    input[type="text"]:focus { border-color: var(--accent-teal); }
 
-    #room-info { font-size: 0.78rem; color: #aaa; margin-top: 6px; letter-spacing: 1px; }
+    #room-info { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 1px; }
 
     #config-warning {
-      background: #fff3cd;
-      border: 2px solid #ffc107;
+      background: var(--bg-card);
+      border: 2px solid var(--heading);
       border-radius: 12px;
       padding: 14px 20px;
       max-width: 360px;
       text-align: center;
       font-size: 0.88rem;
-      color: #856404;
+      color: var(--heading-dark);
       line-height: 1.5;
       display: none;
     }
@@ -357,35 +439,58 @@
 <div id="screen-game">
   <h1>Minesweeper</h1>
 
-  <div id="scoreboard">
-    <div class="chip p1" id="chip-p1">
-      <div class="chip-name">Player 1</div>
-      <div class="chip-status"></div>
-      <div class="chip-wins"></div>
-    </div>
-    <div class="chip p2" id="chip-p2">
-      <div class="chip-name">Player 2</div>
-      <div class="chip-status"></div>
-      <div class="chip-wins"></div>
-    </div>
-    <div class="chip p3" id="chip-p3">
-      <div class="chip-name">Player 3</div>
-      <div class="chip-status"></div>
-      <div class="chip-wins"></div>
+  <div class="game-header">
+    <div class="eyebrow" id="round-label">Round 1 · Best of 5</div>
+    <div id="shot-clock" class="clock-pill" style="display:none">
+      <span>⏱</span><span id="clock-seconds">20s</span>
     </div>
   </div>
+  <div class="clock-track" id="clock-track" style="display:none"><div id="clock-bar" style="width:100%"></div></div>
 
   <div id="player-badge"></div>
   <div id="spectator-banner"></div>
   <div id="status"></div>
 
-  <div id="shot-clock">
-    <div id="clock-seconds">20s</div>
-    <div class="clock-track"><div id="clock-bar" style="width:100%"></div></div>
-  </div>
-
   <div id="board-wrap">
     <div id="board"></div>
+  </div>
+
+  <div class="section-divider"></div>
+  <div class="eyebrow" style="margin-bottom:10px;">Live Standings</div>
+  <div id="standings">
+    <div class="standing-row" id="standing-p1">
+      <div class="avatar">P1</div>
+      <div class="standing-body">
+        <div class="standing-top">
+          <span class="standing-name" id="name-p1">Player 1</span>
+          <span class="standing-status" id="tag-p1"></span>
+          <span class="standing-frac" id="frac-p1">0/3</span>
+        </div>
+        <div class="standing-track"><div class="standing-fill" id="fill-p1" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="standing-row" id="standing-p2">
+      <div class="avatar">P2</div>
+      <div class="standing-body">
+        <div class="standing-top">
+          <span class="standing-name" id="name-p2">Player 2</span>
+          <span class="standing-status" id="tag-p2"></span>
+          <span class="standing-frac" id="frac-p2">0/3</span>
+        </div>
+        <div class="standing-track"><div class="standing-fill" id="fill-p2" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="standing-row" id="standing-p3">
+      <div class="avatar">P3</div>
+      <div class="standing-body">
+        <div class="standing-top">
+          <span class="standing-name" id="name-p3">Player 3</span>
+          <span class="standing-status" id="tag-p3"></span>
+          <span class="standing-frac" id="frac-p3">0/3</span>
+        </div>
+        <div class="standing-track"><div class="standing-fill" id="fill-p3" style="width:0%"></div></div>
+      </div>
+    </div>
   </div>
 
   <div id="controls">
@@ -868,42 +973,54 @@ function tick() {
 }
 
 function updateClockUI(remainingMs, totalMs) {
-  const wrapEl = document.getElementById('shot-clock');
+  const pillEl = document.getElementById('shot-clock');
+  const trackEl = document.getElementById('clock-track');
   if (remainingMs === null) {
-    wrapEl.style.display = 'none';
+    pillEl.style.display = 'none';
+    trackEl.style.display = 'none';
     return;
   }
-  wrapEl.style.display = 'flex';
+  pillEl.style.display = 'inline-flex';
+  trackEl.style.display = 'block';
   const clamped = Math.max(0, remainingMs);
   const seconds = Math.ceil(clamped / 1000);
   document.getElementById('clock-seconds').textContent = seconds + 's';
   document.getElementById('clock-bar').style.width = ((clamped / totalMs) * 100) + '%';
-  wrapEl.classList.toggle('urgent', totalMs === TURN_MS && seconds <= 5);
+  const urgent = totalMs === TURN_MS && seconds <= 5;
+  pillEl.classList.toggle('urgent', urgent);
+  document.getElementById('clock-bar').classList.toggle('urgent', urgent);
 }
 
 // ---- Render ----
 function renderGame() {
   if (!room) return;
-  renderScoreboard();
+  renderStandings();
   renderStatus();
   renderBoard();
 }
 
-function renderScoreboard() {
+function renderStandings() {
   [1, 2, 3].forEach(p => {
-    const chip = document.getElementById('chip-p' + p);
-    chip.classList.toggle('active', !room.gameOver && room.currentTurn === p && !room.eliminated[p]);
-    chip.classList.toggle('eliminated', !!room.eliminated[p]);
-    const statusEl = chip.querySelector('.chip-status');
-    statusEl.textContent = room.eliminated[p] ? 'Eliminated' : (!room.gameOver && room.currentTurn === p ? 'Turn' : '');
-    const winsEl = chip.querySelector('.chip-wins');
+    const row = document.getElementById('standing-p' + p);
+    const isEliminated = !!room.eliminated[p];
+    const isActive = !room.gameOver && room.currentTurn === p && !isEliminated;
+    row.classList.toggle('eliminated', isEliminated);
+    row.classList.toggle('active', isActive);
+
+    document.getElementById('name-p' + p).textContent = p === myPlayer ? 'You' : PLAYER_LABEL[p];
+    document.getElementById('tag-p' + p).textContent = isEliminated ? 'Eliminated' : (isActive ? 'Turn' : '');
+
     const wins = (room.matchScore && room.matchScore[p]) || 0;
-    winsEl.textContent = '●'.repeat(wins) + '○'.repeat(Math.max(0, ROUNDS_TO_WIN_MATCH * 2 - 1 - wins));
+    document.getElementById('frac-p' + p).textContent = wins + '/' + ROUNDS_TO_WIN_MATCH;
+    document.getElementById('fill-p' + p).style.width = ((wins / ROUNDS_TO_WIN_MATCH) * 100) + '%';
   });
 }
 
 function renderStatus() {
   document.getElementById('player-badge').textContent = 'You are ' + PLAYER_LABEL[myPlayer];
+
+  const roundLabel = document.getElementById('round-label');
+  roundLabel.textContent = room.matchOver ? 'Match Complete' : `Round ${room.round} · Best of 5`;
 
   const status = document.getElementById('status');
   status.className = '';

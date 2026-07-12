@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Gift Box Balloon Hangman — 3 Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+    :root {
+      --bg-page: #efe9dc;
+      --bg-card: #fbf8f1;
+      --bg-panel: #ece3d2;
+      --bg-tile: #ffffff;
+      --text-primary: #2f2a22;
+      --text-muted: #9a9080;
+      --heading: #a5432a;
+      --heading-dark: #7a3220;
+      --accent-teal: #5f8575;
+      --accent-teal-dark: #45705f;
+      --accent-teal-light: #cfe0d6;
+      --pill-bg: #5c3527;
+      --danger: #8a3324;
+      --border-soft: #e0d7c2;
+      --balloon-red: #d9564a;
+      --balloon-teal: #4ecdc4;
+      --balloon-yellow: #d4a53a;
+      --balloon-purple: #a29bfe;
+      --balloon-orange: #ff9f6b;
+      --balloon-green: #5f8f4f;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-page);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      color: var(--text-primary);
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin-bottom: 18px;
+      color: var(--heading);
+      text-align: center;
+    }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    /* ---- LOBBY ---- */
+    #screen-lobby { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+    .lobby-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      padding: 20px 28px;
+      box-shadow: 0 4px 20px rgba(90,60,30,0.08);
+      width: 300px;
+    }
+
+    .lobby-group h3 {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .lobby-divider { font-size: 0.8rem; color: var(--text-muted); margin: 2px 0; }
+    .lobby-rules { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; max-width: 300px; text-align: center; }
+
+    /* ---- WAITING ---- */
+    #screen-waiting { display: none; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
+
+    .room-code-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 18px 36px;
+      box-shadow: 0 4px 20px rgba(90,60,30,0.10);
+    }
+
+    .room-code-box .label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+    .room-code-box .code  { font-family: 'Fraunces', Georgia, serif; font-size: 2.6rem; font-weight: 700; letter-spacing: 8px; color: var(--heading); }
+
+    #waiting-roster { display: flex; flex-direction: column; gap: 8px; width: 260px; }
+
+    .roster-row {
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: var(--bg-panel);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .roster-row.joined { background: var(--accent-teal-light); color: var(--accent-teal-dark); }
+    .roster-row.active { outline: 2px solid var(--heading); outline-offset: -2px; color: var(--heading-dark); }
+
+    /* ---- GAME ---- */
+    #screen-game { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 460px; }
+
+    #player-badge { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+
+    #status {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      min-height: 26px;
+      color: var(--text-primary);
+      text-align: center;
+    }
+    #status.win { color: var(--heading); }
+
+    .game-top { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; justify-content: center; width: 100%; }
+    .scene-wrap { flex: 0 0 220px; display: flex; justify-content: center; }
+    svg { display: block; max-width: 100%; height: auto; }
+    .balloon { transition: opacity 0.25s ease; transform-origin: center; }
+    .balloon.popped { opacity: 0; }
+    .pop-burst { opacity: 0; transform-origin: center; }
+    .pop-burst.show { animation: burst 0.45s ease-out forwards; }
+    @keyframes burst { 0% { opacity: 1; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+    .string { stroke: #b9ac93; stroke-width: 1.5; }
+    #giftLid { transition: transform 0.5s ease; transform-origin: 60px 92px; }
+    .box-opened #giftLid { transform: translateY(-14px) rotate(-8deg); }
+
+    .info-wrap { flex: 1 1 220px; min-width: 220px; }
+
+    .word-board { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 4px 0 14px; min-height: 40px; }
+    .letter-slot {
+      width: 26px; height: 36px;
+      border-bottom: 3px solid var(--heading);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.3rem; font-weight: 700; text-transform: uppercase;
+    }
+    .letter-slot.space { border-bottom: none; width: 16px; }
+
+    .keyboard { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin: 0 auto 12px; }
+    .key {
+      padding: 8px 0; background: var(--bg-card); color: var(--text-primary);
+      border: 1px solid var(--border-soft); font-size: 0.9rem; font-weight: 700;
+      border-radius: 8px; cursor: pointer;
+    }
+    .key:disabled { opacity: 0.35; cursor: not-allowed; }
+    .key.correct { background: var(--accent-teal-light); border-color: var(--accent-teal); color: var(--accent-teal-dark); }
+    .key.wrong { background: #f3d9d4; border-color: var(--danger); color: var(--danger); }
+
+    .word-guess-row { display: flex; gap: 8px; margin: 0 auto 14px; }
+    .word-guess-row input { flex: 1; text-transform: none; letter-spacing: normal; font-weight: 600; width: auto; }
+    .word-guess-row button { flex: 0 0 auto; padding: 8px 14px; font-size: 0.85rem; }
+
+    .wrong-count { color: var(--heading); font-weight: 700; }
+
+    .log-box {
+      margin-top: 10px; max-height: 110px; overflow-y: auto;
+      background: var(--bg-panel); border-radius: 10px; padding: 8px 12px;
+      font-size: 0.78rem; color: var(--text-muted); width: 100%;
+    }
+    .log-box div { padding: 2px 0; }
+
+    #controls { display: flex; gap: 12px; margin-top: 8px; }
+
+    button {
+      padding: 10px 28px; border: none; border-radius: 30px;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(90,60,30,0.15); }
+    button:active { transform: translateY(0); }
+
+    .btn-primary { background: var(--accent-teal); color: #fff; }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 2px solid var(--border-soft); }
+    .btn-danger { background: var(--bg-card); color: var(--danger); border: 2px solid var(--danger); }
+
+    input[type="text"] {
+      padding: 10px 16px; border-radius: 30px; border: 2px solid var(--border-soft);
+      background: var(--bg-card); font-size: 1rem; font-weight: 700; text-align: center;
+      letter-spacing: 4px; text-transform: uppercase; width: 160px; outline: none;
+      color: var(--heading); font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+    input[type="text"]:focus { border-color: var(--accent-teal); }
+
+    #room-info { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 1px; }
+
+    #config-warning {
+      background: var(--bg-card); border: 2px solid var(--heading); border-radius: 12px;
+      padding: 14px 20px; max-width: 320px; text-align: center; font-size: 0.85rem;
+      color: var(--heading-dark); line-height: 1.5; display: none;
+    }
+
+    .end-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(40,30,20,0.55);
+      align-items: center; justify-content: center; padding: 20px; z-index: 10;
+    }
+    .end-overlay.show { display: flex; }
+    .end-card {
+      background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: 18px;
+      padding: 32px; text-align: center; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .end-card h2 { font-family: 'Fraunces', Georgia, serif; font-size: 1.6rem; margin-bottom: 8px; color: var(--heading); }
+    .end-card .answer { font-size: 1.15rem; font-weight: 700; color: var(--heading-dark); margin: 12px 0 20px; }
+    .confetti-piece { position: absolute; top: -10px; width: 8px; height: 14px; opacity: 0.9; animation: fall linear forwards; }
+    @keyframes fall { to { transform: translateY(420px) rotate(360deg); opacity: 0; } }
+    #confettiLayer { position: relative; height: 0; overflow: visible; }
+    #actionError { color: var(--danger); font-size: 0.8rem; margin-top: 6px; min-height: 18px; }
+  </style>
+</head>
+<body>
+
+<!-- ==================== LOBBY ==================== -->
+<div id="screen-lobby">
+  <h1>Gift Box Balloon Hangman<br><span style="font-size:0.5em;">Guess it before the balloons pop</span></h1>
+
+  <div id="config-warning">
+    <strong>Firebase not configured</strong>
+    Paste a Firebase project config into the <code>FIREBASE_CONFIG</code> object near the top of the &lt;script&gt; in this file.
+  </div>
+
+  <div class="lobby-group">
+    <h3>Your Name</h3>
+    <input type="text" id="my-name" placeholder="Your name" maxlength="16" style="width:100%; letter-spacing:normal; text-transform:none;">
+    <h3 style="margin-top:8px;">Play Online (3 players)</h3>
+    <button class="btn-primary" onclick="createGame()" style="width:100%">Create Game</button>
+    <div class="lobby-divider">or join one</div>
+    <div style="display:flex;gap:8px;width:100%">
+      <input type="text" id="join-code" placeholder="CODE" maxlength="6">
+      <button class="btn-primary" onclick="joinGame()" style="padding:10px 18px">Join</button>
+    </div>
+  </div>
+
+  <p class="lobby-rules">
+    A gift box hangs from 6 balloons. Take turns guessing letters of a secret word or phrase — or guess
+    the whole thing if you're ready. Every wrong guess pops one balloon. Solve it before all 6 pop and
+    the gift box opens!
+  </p>
+</div>
+
+<!-- ==================== WAITING ==================== -->
+<div id="screen-waiting">
+  <h1>Gift Box Balloon Hangman</h1>
+  <div class="room-code-box">
+    <div class="label">Share this code</div>
+    <div class="code" id="display-code"></div>
+  </div>
+  <div id="waiting-roster"></div>
+  <button class="btn-danger" onclick="cancelOnline()">Cancel</button>
+</div>
+
+<!-- ==================== GAME ==================== -->
+<div id="screen-game">
+  <h1>Gift Box Balloon Hangman</h1>
+  <div id="player-badge"></div>
+  <div id="status"></div>
+
+  <div class="game-top">
+    <div class="scene-wrap">
+      <svg viewBox="0 0 220 260" width="220" height="250" id="scene">
+        <line class="string" x1="60" y1="150" x2="35" y2="70"></line>
+        <line class="string" x1="90" y1="150" x2="75" y2="55"></line>
+        <line class="string" x1="110" y1="150" x2="110" y2="45"></line>
+        <line class="string" x1="130" y1="150" x2="145" y2="55"></line>
+        <line class="string" x1="150" y1="150" x2="180" y2="65"></line>
+        <line class="string" x1="100" y1="150" x2="110" y2="90"></line>
+        <g id="giftGroup">
+          <rect x="45" y="150" width="120" height="90" rx="6" fill="#a5432a"></rect>
+          <rect x="45" y="150" width="120" height="22" fill="#7a3220"></rect>
+          <rect x="97" y="150" width="16" height="90" fill="#d4a53a"></rect>
+          <rect x="45" y="163" width="120" height="16" fill="#d4a53a"></rect>
+          <g id="giftLid">
+            <ellipse cx="70" cy="150" rx="16" ry="12" fill="#c9573d"></ellipse>
+            <ellipse cx="140" cy="150" rx="16" ry="12" fill="#c9573d"></ellipse>
+            <circle cx="105" cy="148" r="12" fill="#d4a53a"></circle>
+          </g>
+        </g>
+        <g id="balloon0"><ellipse class="balloon" cx="35" cy="55" rx="22" ry="27" fill="var(--balloon-red)"></ellipse><circle class="pop-burst" id="burst0" cx="35" cy="55" r="26" fill="none" stroke="var(--balloon-red)" stroke-width="4"></circle></g>
+        <g id="balloon1"><ellipse class="balloon" cx="75" cy="40" rx="22" ry="27" fill="var(--balloon-teal)"></ellipse><circle class="pop-burst" id="burst1" cx="75" cy="40" r="26" fill="none" stroke="var(--balloon-teal)" stroke-width="4"></circle></g>
+        <g id="balloon2"><ellipse class="balloon" cx="110" cy="30" rx="22" ry="27" fill="var(--balloon-yellow)"></ellipse><circle class="pop-burst" id="burst2" cx="110" cy="30" r="26" fill="none" stroke="var(--balloon-yellow)" stroke-width="4"></circle></g>
+        <g id="balloon3"><ellipse class="balloon" cx="145" cy="40" rx="22" ry="27" fill="var(--balloon-purple)"></ellipse><circle class="pop-burst" id="burst3" cx="145" cy="40" r="26" fill="none" stroke="var(--balloon-purple)" stroke-width="4"></circle></g>
+        <g id="balloon4"><ellipse class="balloon" cx="180" cy="50" rx="22" ry="27" fill="var(--balloon-orange)"></ellipse><circle class="pop-burst" id="burst4" cx="180" cy="50" r="26" fill="none" stroke="var(--balloon-orange)" stroke-width="4"></circle></g>
+        <g id="balloon5"><ellipse class="balloon" cx="110" cy="75" rx="18" ry="22" fill="var(--balloon-green)"></ellipse><circle class="pop-burst" id="burst5" cx="110" cy="75" r="22" fill="none" stroke="var(--balloon-green)" stroke-width="4"></circle></g>
+      </svg>
+    </div>
+
+    <div class="info-wrap">
+      <div class="word-board" id="word-board"></div>
+      <div class="keyboard" id="keyboard"></div>
+      <div class="word-guess-row">
+        <input type="text" id="word-guess-input" placeholder="Guess the whole thing">
+        <button class="btn-secondary" id="word-guess-btn" onclick="submitWordGuess()">Guess It</button>
+      </div>
+      <div style="text-align:center; font-size:0.85rem; color:var(--text-muted);">Balloons popped: <span class="wrong-count" id="wrong-count">0</span> / 6</div>
+      <div id="actionError"></div>
+      <div class="log-box" id="log-box"></div>
+    </div>
+  </div>
+
+  <div class="section-divider" style="height:1px;background:var(--border-soft);width:100%;margin:14px 0;"></div>
+  <div class="eyebrow" style="margin-bottom:8px;">Players</div>
+  <div id="waiting-roster-ingame" style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:300px;"></div>
+
+  <div id="controls">
+    <button class="btn-secondary" onclick="goLobby()">Lobby</button>
+  </div>
+  <div id="room-info"></div>
+</div>
+
+<div class="end-overlay" id="end-overlay">
+  <div id="confettiLayer"></div>
+  <div class="end-card">
+    <h2 id="end-title"></h2>
+    <div id="end-message"></div>
+    <div class="answer" id="end-answer"></div>
+    <button class="btn-primary" onclick="playAgain()">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  FIREBASE CONFIG — this game uses its own dedicated Firebase
+//  project (kept separate from connect4.html / minesweeper.html
+//  / codebreaker.html).
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL:       "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+// ============================================================
+
+const MAX_WRONG = 6;
+const PLAYER_LABEL = { 1: 'Player 1', 2: 'Player 2', 3: 'Player 3' };
+const MAX_LOG = 8;
+
+const WORD_BANK = [
+  "sunshine", "friendship", "adventure", "campfire", "rainbow arc",
+  "butterfly", "gratitude", "kindness matters", "harmony", "discovery",
+  "curiosity", "wonderful", "together", "snowflake", "mountain trail",
+  "treasure map", "laughter", "sandcastle", "shooting star", "ocean breeze",
+  "garden party", "movie night", "game night", "road trip", "picnic basket",
+  "birthday cake", "bubble bath", "puzzle piece", "paper airplane", "bicycle ride",
+  "starlight", "waterfall", "blueberry", "watermelon", "pancakes",
+  "backpack trip", "family reunion", "cozy blanket", "campout", "hopscotch",
+  "lighthouse", "seashell", "raindrops", "meadowlark", "orchestra",
+  "telescope", "volcano", "dinosaur bones", "chocolate chip", "board games"
+];
+
+// ---- State ----
+let roomCode = null;
+let roomRef = null;
+let myPlayer = null;
+let room = null;
+let waitingUnsubscribe = null;
+let gameUnsubscribe = null;
+let db = null;
+
+// ---- Firebase ----
+function isFirebaseConfigured() {
+  return FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
+}
+
+function loadFirebase(callback) {
+  if (db) { callback(); return; }
+  if (!isFirebaseConfigured()) {
+    document.getElementById('config-warning').style.display = 'block';
+    return;
+  }
+  const scripts = [
+    'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js'
+  ];
+  let loaded = 0;
+  scripts.forEach(src => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => { if (++loaded === scripts.length) initFirebase(callback); };
+    document.head.appendChild(s);
+  });
+}
+
+function initFirebase(callback) {
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.database();
+  callback();
+}
+
+function generateCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+function myName() {
+  return (document.getElementById('my-name').value || '').trim().slice(0, 16);
+}
+
+// ---- Game logic (pure) ----
+function pickWord(avoid) {
+  const choices = WORD_BANK.filter(w => w !== avoid);
+  const pool = choices.length ? choices : WORD_BANK;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function isGuessable(ch) { return /[a-z]/i.test(ch); }
+
+function isSolved(word, guessedLetters) {
+  guessedLetters = guessedLetters || {};
+  return word.split('').every(ch => !isGuessable(ch) || guessedLetters[ch.toLowerCase()]);
+}
+
+function appendLog(log, msg) {
+  const next = (log || []).slice();
+  next.push(msg);
+  return next.length > MAX_LOG ? next.slice(-MAX_LOG) : next;
+}
+
+function playerName(current, p) {
+  return (current.names && current.names['p' + p]) || PLAYER_LABEL[p];
+}
+
+function initialRoomState(hostName) {
+  return {
+    status: 'waiting',
+    players: { p1: true, p2: false, p3: false },
+    names: { p1: hostName || '', p2: '', p3: '' },
+    turn: 1,
+    word: pickWord(null),
+    guessedLetters: {},
+    wrongCount: 0,
+    result: null,
+    log: []
+  };
+}
+
+// ---- Screens ----
+function showScreen(id) {
+  ['screen-lobby', 'screen-waiting', 'screen-game'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'flex' : 'none';
+  });
+}
+
+function goLobby() {
+  detachWaitingListener();
+  detachGameListener();
+  roomRef = null;
+  roomCode = null; myPlayer = null; room = null;
+  document.getElementById('end-overlay').classList.remove('show');
+  showScreen('screen-lobby');
+}
+
+function cancelOnline() {
+  if (roomRef) {
+    if (myPlayer === 1) {
+      roomRef.remove();
+    } else if (myPlayer) {
+      roomRef.child('players/p' + myPlayer).set(false);
+    }
+  }
+  goLobby();
+}
+
+// ---- Create / Join ----
+function createGame() {
+  if (!isFirebaseConfigured()) {
+    document.getElementById('config-warning').style.display = 'block';
+    return;
+  }
+  loadFirebase(() => {
+    const code = generateCode();
+    roomCode = code;
+    myPlayer = 1;
+
+    roomRef = db.ref('giftbox_rooms/' + code);
+    roomRef.set(initialRoomState(myName()));
+    roomRef.onDisconnect().remove();
+
+    document.getElementById('display-code').textContent = code;
+    showScreen('screen-waiting');
+    watchForStart();
+  });
+}
+
+function joinGame() {
+  if (!isFirebaseConfigured()) {
+    document.getElementById('config-warning').style.display = 'block';
+    return;
+  }
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (code.length < 4) { alert('Enter a valid room code.'); return; }
+  const name = myName();
+
+  loadFirebase(() => {
+    const ref = db.ref('giftbox_rooms/' + code);
+    ref.once('value', snap => {
+      if (!snap.exists()) { alert('Room not found. Check the code and try again.'); return; }
+
+      let assignedSlot = null;
+      ref.transaction(current => {
+        if (!current) return current;
+        if (current.status !== 'waiting') { assignedSlot = null; return; }
+        if (!current.players) current.players = { p1: true, p2: false, p3: false };
+        if (!current.names) current.names = { p1: '', p2: '', p3: '' };
+        if (!current.players.p2) { assignedSlot = 2; current.players.p2 = true; current.names.p2 = name; }
+        else if (!current.players.p3) { assignedSlot = 3; current.players.p3 = true; current.names.p3 = name; }
+        else { assignedSlot = null; return; }
+
+        if (current.players.p1 && current.players.p2 && current.players.p3) {
+          current.status = 'playing';
+        }
+        return current;
+      }, (error, committed, snapshot) => {
+        if (error) { alert('Could not join room: ' + error.message); return; }
+        if (!committed || !assignedSlot) { alert('Room is full or the game already started.'); return; }
+
+        myPlayer = assignedSlot;
+        roomCode = code;
+        roomRef = ref;
+        roomRef.child('players/p' + assignedSlot).onDisconnect().set(false);
+
+        showScreen('screen-waiting');
+        watchForStart();
+      });
+    });
+  });
+}
+
+function watchForStart() {
+  detachWaitingListener();
+  document.getElementById('display-code').textContent = roomCode;
+  const handler = roomRef.on('value', snap => {
+    if (!snap.exists()) { alert('The host left — room closed.'); goLobby(); return; }
+    const data = snap.val();
+    renderWaitingRoster(data);
+    if (data.status === 'playing' || data.status === 'over') {
+      detachWaitingListener();
+      startGameScreen();
+    }
+  });
+  waitingUnsubscribe = () => roomRef.off('value', handler);
+}
+
+function detachWaitingListener() {
+  if (waitingUnsubscribe) { waitingUnsubscribe(); waitingUnsubscribe = null; }
+}
+
+function renderWaitingRoster(data) {
+  const el = document.getElementById('waiting-roster');
+  el.innerHTML = '';
+  [1, 2, 3].forEach(p => {
+    const joined = !!(data.players && data.players['p' + p]);
+    const row = document.createElement('div');
+    row.className = 'roster-row' + (joined ? ' joined' : '');
+    const label = joined ? playerName(data, p) : PLAYER_LABEL[p];
+    row.textContent = label + (p === myPlayer ? ' (you)' : '') + (joined ? ' — ready' : ' — waiting…');
+    el.appendChild(row);
+  });
+}
+
+// ---- Game screen ----
+let keypadBuilt = false;
+function startGameScreen() {
+  showScreen('screen-game');
+  document.getElementById('room-info').textContent = 'Room: ' + roomCode;
+  document.getElementById('player-badge').textContent = 'You are ' + PLAYER_LABEL[myPlayer];
+  buildKeyboard();
+  bindWordGuessEnter();
+  listenToGame();
+}
+
+function buildKeyboard() {
+  if (keypadBuilt) return;
+  keypadBuilt = true;
+  const kb = document.getElementById('keyboard');
+  'abcdefghijklmnopqrstuvwxyz'.split('').forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = 'key';
+    btn.textContent = ch.toUpperCase();
+    btn.dataset.letter = ch;
+    btn.addEventListener('click', () => attemptGuessLetter(ch));
+    kb.appendChild(btn);
+  });
+}
+
+let enterBound = false;
+function bindWordGuessEnter() {
+  if (enterBound) return;
+  enterBound = true;
+  document.getElementById('word-guess-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitWordGuess();
+  });
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('screen-game').style.display === 'none') return;
+    if (document.activeElement === document.getElementById('word-guess-input')) return;
+    const key = e.key.toLowerCase();
+    if (/^[a-z]$/.test(key)) attemptGuessLetter(key);
+  });
+}
+
+function listenToGame() {
+  detachGameListener();
+  const handler = roomRef.on('value', snap => {
+    if (!snap.exists()) { goLobby(); return; }
+    room = snap.val();
+    renderGame();
+  });
+  gameUnsubscribe = () => roomRef.off('value', handler);
+}
+
+function detachGameListener() {
+  if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
+}
+
+// ---- Actions ----
+function attemptGuessLetter(letter) {
+  if (!roomRef || !room) return;
+  showActionError('');
+  if (room.status !== 'playing') { showActionError("The round isn't active right now."); return; }
+  if (room.turn !== myPlayer) { showActionError("It's not your turn."); return; }
+  if (room.guessedLetters && room.guessedLetters[letter]) return;
+
+  roomRef.transaction(current => {
+    if (!current) return current;
+    applyLetterGuess(current, myPlayer, letter);
+    return current;
+  });
+}
+
+function applyLetterGuess(current, player, letter) {
+  if (current.status !== 'playing' || current.turn !== player) return;
+  if (!current.guessedLetters) current.guessedLetters = {};
+  if (current.guessedLetters[letter]) return;
+
+  current.guessedLetters[letter] = true;
+  const correct = current.word.toLowerCase().includes(letter);
+  const name = playerName(current, player);
+  if (!correct) current.wrongCount = (current.wrongCount || 0) + 1;
+  current.log = appendLog(current.log, `${name} guessed '${letter.toUpperCase()}' — ${correct ? 'correct!' : 'wrong, a balloon popped!'}`);
+
+  if (isSolved(current.word, current.guessedLetters)) {
+    current.status = 'over';
+    current.result = 'won';
+  } else if (current.wrongCount >= MAX_WRONG) {
+    current.status = 'over';
+    current.result = 'lost';
+  } else {
+    current.turn = (current.turn % 3) + 1;
+  }
+}
+
+function submitWordGuess() {
+  const input = document.getElementById('word-guess-input');
+  const guess = input.value.trim();
+  input.value = '';
+  if (!roomRef || !room) return;
+  showActionError('');
+  if (room.status !== 'playing') { showActionError("The round isn't active right now."); return; }
+  if (room.turn !== myPlayer) { showActionError("It's not your turn."); return; }
+  if (!guess) { showActionError('Enter a guess first.'); return; }
+
+  roomRef.transaction(current => {
+    if (!current) return current;
+    applyWordGuess(current, myPlayer, guess);
+    return current;
+  });
+}
+
+function applyWordGuess(current, player, guess) {
+  if (current.status !== 'playing' || current.turn !== player) return;
+  const name = playerName(current, player);
+  const correct = guess.toLowerCase() === current.word.toLowerCase();
+
+  if (correct) {
+    const letters = {};
+    current.word.toLowerCase().split('').forEach(ch => { if (isGuessable(ch)) letters[ch] = true; });
+    current.guessedLetters = letters;
+    current.log = appendLog(current.log, `${name} guessed the whole thing — correct!`);
+    current.status = 'over';
+    current.result = 'won';
+  } else {
+    current.wrongCount = (current.wrongCount || 0) + 1;
+    current.log = appendLog(current.log, `${name} guessed the whole thing — not quite — a balloon popped!`);
+    if (current.wrongCount >= MAX_WRONG) {
+      current.status = 'over';
+      current.result = 'lost';
+    } else {
+      current.turn = (current.turn % 3) + 1;
+    }
+  }
+}
+
+function playAgain() {
+  if (!roomRef) return;
+  roomRef.transaction(current => {
+    if (!current) return current;
+    if (current.status !== 'over') return current;
+    current.word = pickWord(current.word);
+    current.guessedLetters = {};
+    current.wrongCount = 0;
+    current.turn = 1;
+    current.status = 'playing';
+    current.result = null;
+    current.log = ['New round started! Guess a letter or the whole word/phrase.'];
+    return current;
+  });
+}
+
+function showActionError(msg) {
+  document.getElementById('actionError').textContent = msg || '';
+}
+
+// ---- Render ----
+let lastOverlayResult = null;
+
+function renderGame() {
+  if (!room) return;
+  renderStatus();
+  renderWordBoard();
+  renderKeyboardState();
+  renderRoster();
+  document.getElementById('wrong-count').textContent = room.wrongCount || 0;
+  syncBalloons(room.wrongCount || 0);
+  renderLog();
+
+  const wordInput = document.getElementById('word-guess-input');
+  const wordBtn = document.getElementById('word-guess-btn');
+  const myTurn = room.status === 'playing' && room.turn === myPlayer;
+  wordInput.disabled = !myTurn;
+  wordBtn.disabled = !myTurn;
+
+  if (room.status === 'over') {
+    if (lastOverlayResult !== room.result) showEndOverlay();
+  } else {
+    document.getElementById('end-overlay').classList.remove('show');
+    document.getElementById('scene').classList.remove('box-opened');
+  }
+  lastOverlayResult = room.status === 'over' ? room.result : null;
+}
+
+function renderStatus() {
+  const status = document.getElementById('status');
+  status.className = '';
+  if (room.status === 'over') {
+    status.textContent = room.result === 'won' ? 'The gift box opened!' : 'All the balloons popped!';
+    status.classList.add('win');
+  } else {
+    const turnName = playerName(room, room.turn);
+    status.textContent = room.turn === myPlayer
+      ? "Your turn! Pick a letter or guess the whole thing."
+      : `Waiting for ${turnName}'s turn...`;
+  }
+}
+
+function renderWordBoard() {
+  const container = document.getElementById('word-board');
+  container.innerHTML = '';
+  const guessed = room.guessedLetters || {};
+  room.word.split('').forEach(ch => {
+    const slot = document.createElement('div');
+    if (ch === ' ') {
+      slot.className = 'letter-slot space';
+    } else if (!isGuessable(ch)) {
+      slot.className = 'letter-slot';
+      slot.textContent = ch;
+    } else {
+      slot.className = 'letter-slot';
+      slot.textContent = guessed[ch.toLowerCase()] ? ch : '';
+    }
+    container.appendChild(slot);
+  });
+}
+
+function renderKeyboardState() {
+  const guessed = room.guessedLetters || {};
+  const myTurn = room.status === 'playing' && room.turn === myPlayer;
+  document.querySelectorAll('#keyboard .key').forEach(btn => {
+    const ch = btn.dataset.letter;
+    btn.classList.remove('correct', 'wrong');
+    if (guessed[ch]) {
+      btn.disabled = true;
+      btn.classList.add(room.word.toLowerCase().includes(ch) ? 'correct' : 'wrong');
+    } else {
+      btn.disabled = !myTurn;
+    }
+  });
+}
+
+function renderRoster() {
+  const el = document.getElementById('waiting-roster-ingame');
+  el.innerHTML = '';
+  [1, 2, 3].forEach(p => {
+    const row = document.createElement('div');
+    const isTurn = room.status === 'playing' && room.turn === p;
+    row.className = 'roster-row joined' + (isTurn ? ' active' : '');
+    row.textContent = playerName(room, p) + (p === myPlayer ? ' (you)' : '') + (isTurn ? ' — guessing' : '');
+    el.appendChild(row);
+  });
+}
+
+function renderLog() {
+  const el = document.getElementById('log-box');
+  el.innerHTML = (room.log || []).map(l => `<div>${l}</div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function syncBalloons(wrongCount) {
+  for (let i = 0; i < MAX_WRONG; i++) {
+    const group = document.getElementById('balloon' + i);
+    const burst = document.getElementById('burst' + i);
+    if (i < wrongCount) {
+      group.querySelector('.balloon').classList.add('popped');
+      burst.classList.add('show');
+    } else {
+      group.querySelector('.balloon').classList.remove('popped');
+      burst.classList.remove('show');
+    }
+  }
+}
+
+function showEndOverlay() {
+  const won = room.result === 'won';
+  document.getElementById('end-title').textContent = won ? '🎉 The Gift Box Opens!' : '🎈 All the Balloons Popped!';
+  document.getElementById('end-message').textContent = won
+    ? 'Solved together before the balloons ran out!'
+    : 'The gift box stayed on the ground this time.';
+  document.getElementById('end-answer').textContent = 'The answer was: ' + room.word.toUpperCase();
+  document.getElementById('scene').classList.toggle('box-opened', won);
+  if (won) launchConfetti();
+  document.getElementById('end-overlay').classList.add('show');
+}
+
+function launchConfetti() {
+  const layer = document.getElementById('confettiLayer');
+  layer.innerHTML = '';
+  const colors = ['#d9564a', '#4ecdc4', '#d4a53a', '#a29bfe', '#ff9f6b', '#5f8f4f'];
+  for (let i = 0; i < 50; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDuration = (1.2 + Math.random() * 1.2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.6) + 's';
+    layer.appendChild(piece);
+  }
+}
+
+// ---- Init ----
+if (!isFirebaseConfigured()) {
+  document.getElementById('config-warning').style.display = 'block';
+}
+showScreen('screen-lobby');
+</script>
+</body>
+</html>

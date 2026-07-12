@@ -150,15 +150,22 @@
 
     .info-wrap { flex: 1 1 220px; min-width: 220px; }
 
-    .word-board { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 4px 0 14px; min-height: 40px; }
+    .word-board { display: flex; flex-wrap: wrap; gap: 10px 14px; justify-content: center; margin: 4px 0 14px; min-height: 40px; }
+    .word-group { display: flex; flex-wrap: nowrap; gap: 6px; }
     .letter-slot {
       width: 26px; height: 36px;
       border-bottom: 3px solid var(--heading);
       display: flex; align-items: center; justify-content: center;
       font-family: 'Fraunces', Georgia, serif;
       font-size: 1.3rem; font-weight: 700; text-transform: uppercase;
+      flex-shrink: 0;
     }
-    .letter-slot.space { border-bottom: none; width: 16px; }
+
+    @media (max-width: 380px) {
+      .letter-slot { width: 20px; height: 30px; font-size: 1.05rem; }
+      .word-group { gap: 4px; }
+      .word-board { gap: 8px 10px; }
+    }
 
     .keyboard { display: grid; grid-template-columns: repeat(9, 1fr); gap: 5px; margin: 0 auto 12px; }
     .key {
@@ -781,18 +788,20 @@ function renderWordBoard() {
   const container = document.getElementById('word-board');
   container.innerHTML = '';
   const guessed = room.guessedLetters || {};
-  room.word.split('').forEach(ch => {
-    const slot = document.createElement('div');
-    if (ch === ' ') {
-      slot.className = 'letter-slot space';
-    } else if (!isGuessable(ch)) {
+  room.word.split(' ').forEach(word => {
+    const group = document.createElement('div');
+    group.className = 'word-group';
+    word.split('').forEach(ch => {
+      const slot = document.createElement('div');
       slot.className = 'letter-slot';
-      slot.textContent = ch;
-    } else {
-      slot.className = 'letter-slot';
-      slot.textContent = guessed[ch.toLowerCase()] ? ch : '';
-    }
-    container.appendChild(slot);
+      if (!isGuessable(ch)) {
+        slot.textContent = ch;
+      } else {
+        slot.textContent = guessed[ch.toLowerCase()] ? ch : '';
+      }
+      group.appendChild(slot);
+    });
+    container.appendChild(group);
   });
 }
 

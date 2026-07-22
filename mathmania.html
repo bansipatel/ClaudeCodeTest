@@ -842,7 +842,7 @@ function submitCurrentAnswer() {
   currentAnswer = '';
   flashProblem(wasCorrect);
 
-  roomRef.child('playerState/p' + myPlayer).transaction(current => {
+  roomRef.child('playerState/' + myPlayer).transaction(current => {
     return applyAnswerToPlayerState(current, room.problems, typed);
   });
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>Math Blitz — 3 Player</title>
+  <title>Mathmania — 3 Player</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -362,7 +362,7 @@
 
 <!-- ==================== LOBBY ==================== -->
 <div id="screen-lobby">
-  <h1>Math Blitz<br><span style="font-size:0.5em;">90-Second Sprint · Most Correct Wins</span></h1>
+  <h1>Mathmania<br><span style="font-size:0.5em;">90-Second Sprint · Most Correct Wins</span></h1>
 
   <div id="config-warning">
     <strong>Firebase not configured</strong>
@@ -389,7 +389,7 @@
 
 <!-- ==================== WAITING ==================== -->
 <div id="screen-waiting">
-  <h1>Math Blitz</h1>
+  <h1>Mathmania</h1>
   <div class="room-code-box">
     <div class="label">Share this code</div>
     <div class="code" id="display-code"></div>
@@ -400,7 +400,7 @@
 
 <!-- ==================== GAME ==================== -->
 <div id="screen-game">
-  <h1>Math Blitz</h1>
+  <h1>Mathmania</h1>
 
   <div id="player-badge"></div>
   <div id="timer">1:30</div>
@@ -652,7 +652,7 @@ function createGame() {
     roomCode = code;
     myPlayer = 1;
 
-    roomRef = db.ref('mathblitz_rooms/' + code);
+    roomRef = db.ref('mathmania_rooms/' + code);
     roomRef.set(initialRoomState());
     roomRef.onDisconnect().remove();
 
@@ -671,7 +671,7 @@ function joinGame() {
   if (code.length < 4) { alert('Enter a valid room code.'); return; }
 
   loadFirebase(() => {
-    const ref = db.ref('mathblitz_rooms/' + code);
+    const ref = db.ref('mathmania_rooms/' + code);
     ref.once('value', snap => {
       if (!snap.exists()) { alert('Room not found. Check the code and try again.'); return; }
       const data = snap.val();

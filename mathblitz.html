@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Math Blitz — 3 Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+
+    :root {
+      --bg-page: #efe9dc;
+      --bg-card: #fbf8f1;
+      --bg-panel: #ece3d2;
+      --bg-tile: #ffffff;
+      --text-primary: #2f2a22;
+      --text-muted: #9a9080;
+      --heading: #a5432a;
+      --heading-dark: #7a3220;
+      --accent-teal: #5f8575;
+      --accent-teal-dark: #45705f;
+      --accent-teal-light: #cfe0d6;
+      --pill-bg: #5c3527;
+      --danger: #8a3324;
+      --border-soft: #e0d7c2;
+      --flash-green: #5f8f4f;
+      --flash-red: #b5432f;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-page);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      color: var(--text-primary);
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin-bottom: 18px;
+      color: var(--heading);
+      text-align: center;
+    }
+
+    .eyebrow {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    /* ---- LOBBY ---- */
+    #screen-lobby { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+    .lobby-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 18px;
+      padding: 20px 28px;
+      box-shadow: 0 4px 20px rgba(90,60,30,0.08);
+      width: 300px;
+    }
+
+    .lobby-group h3 {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .lobby-divider { font-size: 0.8rem; color: var(--text-muted); margin: 2px 0; }
+
+    .lobby-rules {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    /* ---- WAITING ---- */
+    #screen-waiting { display: none; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
+
+    .room-code-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 18px 36px;
+      box-shadow: 0 4px 20px rgba(90,60,30,0.10);
+    }
+
+    .room-code-box .label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+    .room-code-box .code  { font-family: 'Fraunces', Georgia, serif; font-size: 2.6rem; font-weight: 700; letter-spacing: 8px; color: var(--heading); }
+
+    #waiting-roster {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 260px;
+    }
+
+    .roster-row {
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: var(--bg-panel);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .roster-row.joined { background: var(--accent-teal-light); color: var(--accent-teal-dark); }
+
+    /* ---- GAME ---- */
+    #screen-game { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 440px; }
+
+    .game-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: min(94vw, 420px);
+      margin-bottom: 10px;
+    }
+
+    #player-badge {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    #timer {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    #timer.low { color: var(--danger); }
+
+    #status {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      min-height: 28px;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    #status.win { color: var(--heading); font-size: 1.2rem; }
+
+    /* ---- Problem display ---- */
+    #problem-card {
+      width: min(94vw, 380px);
+      background: var(--bg-tile);
+      border: 2px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 22px 16px;
+      margin-bottom: 18px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(90,60,30,0.10);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    #problem-card.flash-correct { border-color: var(--flash-green); box-shadow: 0 0 0 3px rgba(95,143,79,0.25); }
+    #problem-card.flash-wrong { border-color: var(--flash-red); box-shadow: 0 0 0 3px rgba(181,67,47,0.25); }
+
+    #problem-expr {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    #answer-strip {
+      min-height: 40px;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--heading);
+      letter-spacing: 3px;
+      border-top: 2px solid var(--border-soft);
+      padding-top: 8px;
+    }
+
+    /* ---- Keypad ---- */
+    #keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: min(94vw, 320px);
+      margin-bottom: 18px;
+    }
+
+    .key {
+      padding: 16px 0;
+      border-radius: 12px;
+      border: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      font-family: 'Inter', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: transform 0.1s, background 0.15s;
+    }
+
+    .key:active { transform: scale(0.94); }
+    .key:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .key-back { color: var(--danger); }
+    .key-submit { background: var(--accent-teal); color: #fff; border-color: var(--accent-teal); }
+
+    /* ---- LIVE STANDINGS ---- */
+    .section-divider { height: 1px; background: var(--border-soft); width: min(94vw, 420px); margin: 4px 0 14px; }
+
+    #standings {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: min(94vw, 420px);
+      margin-bottom: 8px;
+    }
+
+    .standing-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: opacity 0.2s;
+    }
+
+    .avatar {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px dashed var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      background: var(--bg-card);
+    }
+
+    .standing-row.winner .avatar { border-style: solid; border-color: var(--accent-teal); color: var(--accent-teal-dark); }
+
+    .standing-body { flex: 1; min-width: 0; }
+
+    .standing-top {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .standing-name { font-weight: 700; font-size: 0.95rem; color: var(--text-primary); }
+
+    .standing-status {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .standing-row.winner .standing-status { color: var(--accent-teal-dark); }
+
+    .standing-frac { margin-left: auto; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+
+    .standing-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 4px;
+      background: var(--border-soft);
+      overflow: hidden;
+    }
+
+    .standing-fill {
+      height: 100%;
+      background: var(--accent-teal);
+      transition: width 0.3s ease;
+    }
+
+    #controls { display: flex; gap: 12px; margin-top: 8px; }
+
+    button {
+      padding: 10px 28px;
+      border: none;
+      border-radius: 30px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(90,60,30,0.15); }
+    button:active { transform: translateY(0); }
+
+    .btn-primary { background: var(--accent-teal); color: #fff; }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 2px solid var(--border-soft); }
+    .btn-danger { background: var(--bg-card); color: var(--danger); border: 2px solid var(--danger); }
+
+    input[type="text"] {
+      padding: 10px 16px;
+      border-radius: 30px;
+      border: 2px solid var(--border-soft);
+      background: var(--bg-card);
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      width: 160px;
+      outline: none;
+      color: var(--heading);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    input[type="text"]:focus { border-color: var(--accent-teal); }
+
+    #room-info { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 1px; }
+
+    #config-warning {
+      background: var(--bg-card);
+      border: 2px solid var(--heading);
+      border-radius: 12px;
+      padding: 14px 20px;
+      max-width: 320px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--heading-dark);
+      line-height: 1.5;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== LOBBY ==================== -->
+<div id="screen-lobby">
+  <h1>Math Blitz<br><span style="font-size:0.5em;">90-Second Sprint · Most Correct Wins</span></h1>
+
+  <div id="config-warning">
+    <strong>Firebase not configured</strong>
+    Paste a Firebase project config into the <code>FIREBASE_CONFIG</code> object near the top of the &lt;script&gt; in this file.
+  </div>
+
+  <div class="lobby-group">
+    <h3>Play Online (3 players)</h3>
+    <button class="btn-primary" onclick="createGame()" style="width:100%">Create Game</button>
+    <div class="lobby-divider">or join one</div>
+    <div style="display:flex;gap:8px;width:100%">
+      <input type="text" id="join-code" placeholder="CODE" maxlength="6">
+      <button class="btn-primary" onclick="joinGame()" style="padding:10px 18px">Join</button>
+    </div>
+  </div>
+
+  <p class="lobby-rules">
+    All 3 players get the exact same sequence of math problems — addition, subtraction,
+    multiplication &amp; division, mixed at random. Solve as many as you can before the
+    90-second clock runs out. Wrong answer? It skips straight to the next problem, no
+    penalty besides lost time. Most correct answers when time's up wins.
+  </p>
+</div>
+
+<!-- ==================== WAITING ==================== -->
+<div id="screen-waiting">
+  <h1>Math Blitz</h1>
+  <div class="room-code-box">
+    <div class="label">Share this code</div>
+    <div class="code" id="display-code"></div>
+  </div>
+  <div id="waiting-roster"></div>
+  <button class="btn-danger" onclick="cancelOnline()">Cancel</button>
+</div>
+
+<!-- ==================== GAME ==================== -->
+<div id="screen-game">
+  <h1>Math Blitz</h1>
+
+  <div id="player-badge"></div>
+  <div id="timer">1:30</div>
+  <div id="status"></div>
+
+  <div id="problem-card">
+    <div id="problem-expr">–</div>
+    <div id="answer-strip">&nbsp;</div>
+  </div>
+
+  <div id="keypad">
+    <button class="key" data-d="1">1</button>
+    <button class="key" data-d="2">2</button>
+    <button class="key" data-d="3">3</button>
+    <button class="key" data-d="4">4</button>
+    <button class="key" data-d="5">5</button>
+    <button class="key" data-d="6">6</button>
+    <button class="key" data-d="7">7</button>
+    <button class="key" data-d="8">8</button>
+    <button class="key" data-d="9">9</button>
+    <button class="key key-back" id="key-back">⌫</button>
+    <button class="key" data-d="0">0</button>
+    <button class="key key-submit" id="key-submit" disabled>Enter</button>
+  </div>
+
+  <div class="section-divider"></div>
+  <div class="eyebrow" style="margin-bottom:10px;">Live Standings</div>
+  <div id="standings">
+    <div class="standing-row" id="standing-p1">
+      <div class="avatar">P1</div>
+      <div class="standing-body">
+        <div class="standing-top">
+          <span class="standing-name" id="name-p1">Player 1</span>
+          <span class="standing-status" id="tag-p1"></span>
+          <span class="standing-frac" id="frac-p1">0</span>
+        </div>
+        <div class="standing-track"><div class="standing-fill" id="fill-p1" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="standing-row" id="standing-p2">
+      <div class="avatar">P2</div>
+      <div class="standing-body">
+        <div class="standing-top">
+          <span class="standing-name" id="name-p2">Player 2</span>
+          <span class="standing-status" id="tag-p2"></span>
+          <span class="standing-frac" id="frac-p2">0</span>
+        </div>
+        <div class="standing-track"><div class="standing-fill" id="fill-p2" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="standing-row" id="standing-p3">
+      <div class="avatar">P3</div>
+      <div class="standing-body">
+        <div class="standing-top">
+          <span class="standing-name" id="name-p3">Player 3</span>
+          <span class="standing-status" id="tag-p3"></span>
+          <span class="standing-frac" id="frac-p3">0</span>
+        </div>
+        <div class="standing-track"><div class="standing-fill" id="fill-p3" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button class="btn-secondary" onclick="goLobby()">Lobby</button>
+  </div>
+  <div id="room-info"></div>
+</div>
+
+<script>
+// ============================================================
+//  FIREBASE CONFIG — this game uses its own dedicated Firebase
+//  project (kept separate from codebreaker.html / minesweeper.html / etc).
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  databaseURL:       "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId:         "YOUR_PROJECT",
+  storageBucket:     "YOUR_PROJECT.firebasestorage.app",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+// ============================================================
+
+const ROUND_DURATION_MS = 90000; // 90-second sprint
+const PROBLEM_COUNT = 80;        // comfortably more than any player can reach
+const MAX_ANSWER_DIGITS = 7;     // largest possible answer: 9999*99 = 989901 (6 digits)
+
+const PLAYER_LABEL = { 1: 'Player 1', 2: 'Player 2', 3: 'Player 3' };
+const OP_SYMBOL = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+
+// ---- State ----
+let roomCode = null;
+let roomRef = null;
+let myPlayer = null;
+let room = null;
+let waitingUnsubscribe = null;
+let gameUnsubscribe = null;
+let tickInterval = null;
+let lastEndAttempt = 0;
+let currentAnswer = '';
+let db = null;
+
+// ---- Firebase ----
+function isFirebaseConfigured() {
+  return FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
+}
+
+function loadFirebase(callback) {
+  if (db) { callback(); return; }
+  if (!isFirebaseConfigured()) {
+    alert('Firebase is not configured yet.');
+    return;
+  }
+  const scripts = [
+    'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js'
+  ];
+  let loaded = 0;
+  scripts.forEach(src => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => { if (++loaded === scripts.length) initFirebase(callback); };
+    document.head.appendChild(s);
+  });
+}
+
+function initFirebase(callback) {
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.database();
+  callback();
+}
+
+function generateCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// ---- Problem generation (pure) ----
+function randDigits(minDigits, maxDigits) {
+  const digits = minDigits + Math.floor(Math.random() * (maxDigits - minDigits + 1));
+  const min = digits === 1 ? 1 : Math.pow(10, digits - 1);
+  const max = Math.pow(10, digits) - 1;
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function genAddSub(op) {
+  let a = randDigits(1, 4);
+  let b = randDigits(1, 4);
+  if (op === '-' && b > a) { const t = a; a = b; b = t; }
+  return { op, a, b, answer: op === '+' ? a + b : a - b };
+}
+
+function genMul() {
+  const a = randDigits(1, 4);
+  const b = randDigits(1, 2);
+  return { op: '*', a, b, answer: a * b };
+}
+
+function genDiv() {
+  const b = randDigits(1, 2);      // divisor 1-99
+  const maxQ = Math.floor(9999 / b);
+  const q = 1 + Math.floor(Math.random() * maxQ); // ensures a = b*q stays <= 9999
+  const a = b * q;
+  return { op: '/', a, b, answer: q };
+}
+
+function generateProblem() {
+  const op = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
+  if (op === '+' || op === '-') return genAddSub(op);
+  if (op === '*') return genMul();
+  return genDiv();
+}
+
+function generateProblemSet(n) {
+  const list = [];
+  for (let i = 0; i < n; i++) list.push(generateProblem());
+  return list;
+}
+
+// ---- Answer submission (pure, applied inside a per-player transaction) ----
+function applyAnswerToPlayerState(state, problems, digitsTyped) {
+  if (!state) state = { index: 0, correct: 0, wrong: 0 };
+  const idx = state.index || 0;
+  const problem = problems[idx];
+  if (!problem) return state; // ran out of problems (shouldn't happen with 80)
+
+  const typed = Number(digitsTyped);
+  if (typed === problem.answer) {
+    state.correct = (state.correct || 0) + 1;
+  } else {
+    state.wrong = (state.wrong || 0) + 1;
+  }
+  state.index = idx + 1;
+  return state;
+}
+
+// ---- Screens ----
+function showScreen(id) {
+  ['screen-lobby', 'screen-waiting', 'screen-game'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'flex' : 'none';
+  });
+}
+
+function goLobby() {
+  detachWaitingListener();
+  detachGameListener();
+  stopTicker();
+  roomRef = null;
+  roomCode = null; myPlayer = null; room = null;
+  currentAnswer = '';
+  showScreen('screen-lobby');
+}
+
+function cancelOnline() {
+  if (roomRef) {
+    if (myPlayer === 1) {
+      roomRef.remove();
+    } else if (myPlayer) {
+      roomRef.child('players/p' + myPlayer).set(false);
+    }
+  }
+  goLobby();
+}
+
+// ---- Create / Join ----
+function initialRoomState() {
+  return {
+    status: 'waiting',
+    players: { p1: true, p2: false, p3: false },
+    problems: generateProblemSet(PROBLEM_COUNT),
+    playerState: {
+      1: { index: 0, correct: 0, wrong: 0 },
+      2: { index: 0, correct: 0, wrong: 0 },
+      3: { index: 0, correct: 0, wrong: 0 }
+    },
+    startedAt: 0,
+    endedAt: 0
+  };
+}
+
+function createGame() {
+  if (!isFirebaseConfigured()) {
+    document.getElementById('config-warning').style.display = 'block';
+    return;
+  }
+  loadFirebase(() => {
+    const code = generateCode();
+    roomCode = code;
+    myPlayer = 1;
+
+    roomRef = db.ref('mathblitz_rooms/' + code);
+    roomRef.set(initialRoomState());
+    roomRef.onDisconnect().remove();
+
+    document.getElementById('display-code').textContent = code;
+    showScreen('screen-waiting');
+    watchForStart();
+  });
+}
+
+function joinGame() {
+  if (!isFirebaseConfigured()) {
+    document.getElementById('config-warning').style.display = 'block';
+    return;
+  }
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  if (code.length < 4) { alert('Enter a valid room code.'); return; }
+
+  loadFirebase(() => {
+    const ref = db.ref('mathblitz_rooms/' + code);
+    ref.once('value', snap => {
+      if (!snap.exists()) { alert('Room not found. Check the code and try again.'); return; }
+      const data = snap.val();
+      if (data.status !== 'waiting') { alert('That game has already started.'); return; }
+
+      let assignedSlot = null;
+      ref.child('players').transaction(players => {
+        // Firebase may call this with null on the first attempt if it has no
+        // cached value yet (no listener has been attached to this path). Do
+        // NOT abort on null — supply the known invariant (p1 always exists)
+        // as a best guess; Firebase re-runs this function with the real
+        // server data if that guess turns out to be stale.
+        if (!players) players = { p1: true, p2: false, p3: false };
+        if (!players.p2) { assignedSlot = 2; players.p2 = true; }
+        else if (!players.p3) { assignedSlot = 3; players.p3 = true; }
+        else { assignedSlot = null; return; }
+        return players;
+      }, (error, committed, snapshot) => {
+        if (error) { alert('Could not join room: ' + error.message); return; }
+        if (!committed || !assignedSlot) { alert('Room is full.'); return; }
+
+        myPlayer = assignedSlot;
+        roomCode = code;
+        roomRef = ref;
+        roomRef.child('players/p' + assignedSlot).onDisconnect().set(false);
+
+        showScreen('screen-waiting');
+        watchForStart();
+
+        const players = snapshot.val();
+        if (players.p1 && players.p2 && players.p3) {
+          roomRef.update({ status: 'playing', startedAt: Date.now() });
+        }
+      });
+    });
+  });
+}
+
+function watchForStart() {
+  detachWaitingListener();
+  document.getElementById('display-code').textContent = roomCode;
+  const handler = roomRef.on('value', snap => {
+    if (!snap.exists()) { alert('The host left — room closed.'); goLobby(); return; }
+    const data = snap.val();
+    renderWaitingRoster(data.players || { p1: false, p2: false, p3: false });
+    if (data.status === 'playing') {
+      detachWaitingListener();
+      startGameScreen();
+    }
+  });
+  waitingUnsubscribe = () => roomRef.off('value', handler);
+}
+
+function detachWaitingListener() {
+  if (waitingUnsubscribe) { waitingUnsubscribe(); waitingUnsubscribe = null; }
+}
+
+function renderWaitingRoster(players) {
+  const el = document.getElementById('waiting-roster');
+  el.innerHTML = '';
+  [1, 2, 3].forEach(p => {
+    const joined = !!players['p' + p];
+    const row = document.createElement('div');
+    row.className = 'roster-row' + (joined ? ' joined' : '');
+    row.textContent = PLAYER_LABEL[p] + (p === myPlayer ? ' (you)' : '') + (joined ? ' — ready' : ' — waiting…');
+    el.appendChild(row);
+  });
+}
+
+// ---- Game screen ----
+function startGameScreen() {
+  showScreen('screen-game');
+  document.getElementById('room-info').textContent = 'Room: ' + roomCode;
+  bindKeypad();
+  listenToGame();
+}
+
+let keypadBound = false;
+function bindKeypad() {
+  // The keypad buttons are static DOM nodes reused across every game in this
+  // tab (startGameScreen runs again on each new match), so binding more than
+  // once stacks duplicate click listeners and double-fires every tap.
+  if (keypadBound) return;
+  keypadBound = true;
+  document.querySelectorAll('.key[data-d]').forEach(btn => {
+    btn.addEventListener('click', () => tapDigit(btn.dataset.d));
+  });
+  document.getElementById('key-back').addEventListener('click', tapBackspace);
+  document.getElementById('key-submit').addEventListener('click', submitCurrentAnswer);
+}
+
+function listenToGame() {
+  detachGameListener();
+  const handler = roomRef.on('value', snap => {
+    if (!snap.exists()) { goLobby(); return; }
+    room = snap.val();
+    renderGame();
+  });
+  gameUnsubscribe = () => roomRef.off('value', handler);
+  startTicker();
+}
+
+function detachGameListener() {
+  if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
+}
+
+// ---- Timer ticker (drives countdown + round-end transition) ----
+function startTicker() {
+  stopTicker();
+  tickInterval = setInterval(tick, 250);
+}
+
+function stopTicker() {
+  if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+}
+
+function tick() {
+  if (!room || room.status !== 'playing') return;
+
+  renderTimer();
+
+  const remaining = ROUND_DURATION_MS - (Date.now() - room.startedAt);
+  if (remaining <= 0) {
+    const staleEnough = Date.now() - lastEndAttempt > 2000;
+    if (staleEnough) {
+      lastEndAttempt = Date.now();
+      attemptEndRound();
+    }
+  }
+}
+
+function attemptEndRound() {
+  if (!roomRef) return;
+  roomRef.transaction(current => {
+    if (!current || current.status !== 'playing') return current;
+    if (Date.now() - current.startedAt < ROUND_DURATION_MS) return current;
+    current.status = 'over';
+    current.endedAt = Date.now();
+    return current;
+  });
+}
+
+// ---- Keypad interaction ----
+function canAnswer() {
+  return !!room && room.status === 'playing';
+}
+
+function tapDigit(d) {
+  if (!canAnswer() || currentAnswer.length >= MAX_ANSWER_DIGITS) return;
+  currentAnswer += d;
+  renderAnswerStrip();
+}
+
+function tapBackspace() {
+  if (!canAnswer()) return;
+  currentAnswer = currentAnswer.slice(0, -1);
+  renderAnswerStrip();
+}
+
+function submitCurrentAnswer() {
+  if (!canAnswer() || currentAnswer.length === 0) return;
+  const typed = currentAnswer;
+  const myState = (room.playerState && room.playerState[myPlayer]) || { index: 0, correct: 0, wrong: 0 };
+  const idx = myState.index || 0;
+  const problem = room.problems[idx];
+  const wasCorrect = problem && Number(typed) === problem.answer;
+
+  currentAnswer = '';
+  flashProblem(wasCorrect);
+
+  roomRef.child('playerState/p' + myPlayer).transaction(current => {
+    return applyAnswerToPlayerState(current, room.problems, typed);
+  });
+}
+
+function flashProblem(correct) {
+  const card = document.getElementById('problem-card');
+  card.classList.remove('flash-correct', 'flash-wrong');
+  // force reflow so the class can be re-added if the same flash fires twice in a row
+  void card.offsetWidth;
+  card.classList.add(correct ? 'flash-correct' : 'flash-wrong');
+  setTimeout(() => card.classList.remove('flash-correct', 'flash-wrong'), 350);
+}
+
+function renderAnswerStrip() {
+  const strip = document.getElementById('answer-strip');
+  strip.textContent = currentAnswer.length ? currentAnswer : ' ';
+  const allowed = canAnswer();
+  document.querySelectorAll('.key[data-d]').forEach(btn => { btn.disabled = !allowed; });
+  document.getElementById('key-back').disabled = !allowed;
+  document.getElementById('key-submit').disabled = !allowed || currentAnswer.length === 0;
+}
+
+// ---- Render ----
+function renderGame() {
+  if (!room) return;
+  renderStandings();
+  renderStatus();
+  renderTimer();
+  renderProblem();
+  renderAnswerStrip();
+}
+
+function renderProblem() {
+  const expr = document.getElementById('problem-expr');
+  if (room.status === 'over') { expr.textContent = 'Time!'; return; }
+  const myState = (room.playerState && room.playerState[myPlayer]) || { index: 0 };
+  const problem = room.problems[myState.index || 0];
+  if (!problem) { expr.textContent = 'All done!'; return; }
+  expr.textContent = `${problem.a} ${OP_SYMBOL[problem.op]} ${problem.b} =`;
+}
+
+function playerScores() {
+  return [1, 2, 3].map(p => ((room.playerState && room.playerState[p] && room.playerState[p].correct) || 0));
+}
+
+function renderStandings() {
+  const scores = playerScores();
+  const leader = Math.max(1, ...scores);
+  const isOver = room.status === 'over';
+  const topScore = Math.max(...scores);
+  const winners = isOver ? [1, 2, 3].filter(p => scores[p - 1] === topScore) : [];
+  const isTie = winners.length > 1;
+
+  [1, 2, 3].forEach(p => {
+    const row = document.getElementById('standing-p' + p);
+    const isWinner = isOver && !isTie && winners[0] === p;
+    row.classList.toggle('winner', !!isWinner);
+
+    document.getElementById('name-p' + p).textContent = p === myPlayer ? 'You' : PLAYER_LABEL[p];
+    const correct = scores[p - 1];
+    document.getElementById('tag-p' + p).textContent = isWinner ? 'Winner!' : (isOver && isTie ? 'Tied' : 'solved');
+    document.getElementById('frac-p' + p).textContent = correct;
+    document.getElementById('fill-p' + p).style.width = ((correct / leader) * 100) + '%';
+  });
+}
+
+function renderStatus() {
+  document.getElementById('player-badge').textContent = 'You are ' + PLAYER_LABEL[myPlayer];
+
+  const status = document.getElementById('status');
+  status.className = '';
+  if (room.status === 'over') {
+    const scores = playerScores();
+    const topScore = Math.max(...scores);
+    const winners = [1, 2, 3].filter(p => scores[p - 1] === topScore);
+    status.textContent = winners.length > 1
+      ? `It's a tie at ${topScore} correct!`
+      : `${PLAYER_LABEL[winners[0]]} wins with ${topScore} correct!`;
+    status.classList.add('win');
+  } else {
+    status.textContent = 'Solve as many as you can!';
+  }
+}
+
+function renderTimer() {
+  const timerEl = document.getElementById('timer');
+  const remainingMs = room.status === 'over' ? 0 : Math.max(0, ROUND_DURATION_MS - (Date.now() - room.startedAt));
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  timerEl.textContent = mins + ':' + String(secs).padStart(2, '0');
+  timerEl.classList.toggle('low', totalSeconds <= 10 && room.status === 'playing');
+}
+
+// ---- Init ----
+if (!isFirebaseConfigured()) {
+  document.getElementById('config-warning').style.display = 'block';
+}
+showScreen('screen-lobby');
+</script>
+</body>
+</html>

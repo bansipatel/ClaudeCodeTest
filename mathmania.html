@@ -408,7 +408,8 @@
     @media (min-width: 600px) {
       .rules-card { max-width: 960px; padding: 28px 40px; }
       .rules-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 36px; text-align: left; }
-      .chip-list, .example-row { justify-content: flex-start; }
+      .rules-bullets { margin-left: 0; }
+      .example-row { justify-content: flex-start; }
       .example-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
     }
 
@@ -494,28 +495,35 @@
       line-height: 1.5;
     }
 
-    /* ---- quick-rules chips: the short facts; the animation carries the
-       actual explaining, so these stay to a few words each ---- */
-    .chip-list {
+    /* ---- quick-rules bullets: short instructional lines; the animation
+       still carries the full walkthrough, so these stay one line each ---- */
+    .rules-bullets {
+      list-style: none;
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
       gap: 7px;
-      margin-bottom: 14px;
+      max-width: 340px;
+      margin: 0 auto 16px;
+      text-align: left;
     }
 
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: var(--bg-panel);
-      border: 1px solid var(--border-soft);
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 0.76rem;
-      font-weight: 600;
+    .rules-bullets li {
+      position: relative;
+      padding-left: 16px;
+      font-size: 0.85rem;
       color: var(--text-primary);
-      white-space: nowrap;
+      line-height: 1.45;
+    }
+
+    .rules-bullets li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-teal);
     }
 
     /* ---- live gameplay demo: one continuous looping round, then a visible
@@ -690,14 +698,13 @@
       <div class="rules-col">
         <div class="rules-section">
           <h2>Quick Rules</h2>
-          <div class="chip-list">
-            <span class="chip">👥 Same problems</span>
-            <span class="chip">🏎️ Your own pace</span>
-            <span class="chip">⌨️ Type → Enter</span>
-            <span class="chip">❌ Wrong = skip</span>
-            <span class="chip">⏱️ 90 seconds</span>
-            <span class="chip">🏆 Most correct wins</span>
-          </div>
+          <ul class="rules-bullets">
+            <li>All 3 players get the exact same problems — race at your own pace, no turns.</li>
+            <li>Type your answer, then hit Enter to submit.</li>
+            <li>Wrong guess? Skips straight to the next problem, no retries.</li>
+            <li>Solve as many as you can in 90 seconds.</li>
+            <li>Most correct answers when time's up wins the match.</li>
+          </ul>
           <div class="example-list">
             <div class="example-row"><span class="op-badge op-add">+</span> 3482 + 719 = 4201</div>
             <div class="example-row"><span class="op-badge op-sub">−</span> 9004 − 3871 = 5133</div>

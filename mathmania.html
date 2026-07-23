@@ -504,6 +504,42 @@
       margin: 12px auto 0;
     }
 
+    /* ---- static preview of what the end-of-round standings look like --
+       the looping demo above resets before ever showing this, so it's
+       genuinely new information, not a repeat of the animation ---- */
+    .demo-final {
+      width: 100%;
+      max-width: 230px;
+      margin: 14px auto 0;
+      background: var(--bg-tile);
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+
+    .demo-final-label {
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .demo-final-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .demo-final-row.winner { color: var(--accent-teal-dark); font-weight: 800; }
+    .demo-final-score { font-family: 'Fraunces', Georgia, serif; }
+
     /* ---- quick-rules bullets: short instructional lines; the animation
        still carries the full walkthrough, so these stay one line each ---- */
     .rules-bullets {
@@ -758,6 +794,14 @@
               <span class="dc-cap-reset">↻ Watch it again</span>
             </p>
           </div>
+
+          <div class="demo-final">
+            <div class="demo-final-label">When the clock hits zero</div>
+            <div class="demo-final-row winner"><span>🏆 You</span><span class="demo-final-score">14</span></div>
+            <div class="demo-final-row"><span>P2</span><span class="demo-final-score">11</span></div>
+            <div class="demo-final-row"><span>P3</span><span class="demo-final-score">9</span></div>
+          </div>
+
           <p class="demo-tip">🎲 Every problem mixes all 4 operations at random — an easy one can follow a hard one, so don't get stuck on any single question.</p>
         </div>
       </div>

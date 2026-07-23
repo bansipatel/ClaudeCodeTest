@@ -356,9 +356,378 @@
       line-height: 1.5;
       display: none;
     }
+
+    /* ---- RULES SCREEN ---- */
+    #screen-rules {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      padding: 36px 20px;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    .rules-card {
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-soft);
+      border-radius: 22px;
+      padding: 30px 26px;
+      box-shadow: 0 8px 28px rgba(90,60,30,0.10);
+    }
+
+    .rules-badge {
+      display: inline-block;
+      background: var(--heading);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .rules-header h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--heading);
+      margin-bottom: 8px;
+    }
+
+    .rules-goal {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .rules-section { width: 100%; }
+
+    .rules-section h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--heading-dark);
+      margin-bottom: 12px;
+    }
+
+    /* ---- example problems ---- */
+    .example-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .example-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--bg-panel);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+
+    .example-row .op-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .op-add  { background: var(--accent-teal); }
+    .op-sub  { background: var(--heading); }
+    .op-mul  { background: var(--pill-bg); }
+    .op-div  { background: var(--heading-dark); }
+
+    .rules-note {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+
+    .rule-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .rule-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 10px 16px;
+    }
+
+    .rule-card .icon { font-size: 1.3rem; line-height: 1.3; flex-shrink: 0; }
+    .rule-card strong { display: block; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 2px; }
+    .rule-card p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin: 0; }
+
+    /* ---- live gameplay demo: one continuous looping round, then a visible reset ---- */
+    .live-demo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .demo-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .demo-mini-standings { display: flex; gap: 6px; }
+
+    .demo-score-dot {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      background: var(--bg-tile);
+      color: var(--text-muted);
+      border: 1.5px dashed var(--border-soft);
+    }
+
+    .demo-score-dot.you { color: var(--accent-teal-dark); border-color: var(--accent-teal); border-style: solid; }
+
+    .demo-plus1 {
+      position: absolute;
+      top: -14px;
+      right: -4px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--accent-teal-dark);
+      opacity: 0;
+      animation: mmScorePulse 10s infinite;
+    }
+
+    @keyframes mmScorePulse {
+      0%, 55%   { opacity: 0; transform: translateY(0); }
+      57%, 63%  { opacity: 1; transform: translateY(-6px); }
+      66%, 100% { opacity: 0; transform: translateY(-6px); }
+    }
+
+    .demo-clock-track { width: 70px; height: 4px; border-radius: 4px; background: var(--border-soft); overflow: hidden; }
+    .demo-clock-bar { height: 100%; background: var(--accent-teal); animation: mmClockBar 10s infinite; }
+
+    @keyframes mmClockBar {
+      0%   { width: 100%; background: var(--accent-teal); }
+      85%  { width: 10%;  background: var(--accent-teal); }
+      90%  { width: 10%;  background: var(--flash-red); }
+      100% { width: 100%; background: var(--accent-teal); }
+    }
+
+    .demo-problem-card {
+      width: 220px;
+      background: var(--bg-tile);
+      border: 2px solid var(--border-soft);
+      border-radius: 14px;
+      padding: 16px 12px;
+      animation: demoCardFlash 10s infinite;
+    }
+
+    @keyframes demoCardFlash {
+      0%, 21%   { border-color: var(--border-soft); box-shadow: none; }
+      22%, 26%  { border-color: var(--flash-red); box-shadow: 0 0 0 3px rgba(181,67,47,0.22); }
+      27%, 55%  { border-color: var(--border-soft); box-shadow: none; }
+      56%, 60%  { border-color: var(--flash-green); box-shadow: 0 0 0 3px rgba(95,143,79,0.22); }
+      61%, 100% { border-color: var(--border-soft); box-shadow: none; }
+    }
+
+    .demo-expr-wrap, .demo-strip-wrap {
+      position: relative;
+      width: 100%;
+      height: 1.6rem;
+    }
+
+    .demo-expr-wrap { margin-bottom: 6px; }
+
+    .demo-expr, .demo-strip {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 700;
+    }
+
+    .demo-expr { font-size: 1.15rem; color: var(--text-primary); }
+    .demo-strip { font-size: 1.3rem; color: var(--heading); letter-spacing: 2px; }
+
+    #dexprA { animation: dexprA 10s infinite; }
+    @keyframes dexprA { 0%, 27% { opacity: 1; } 30%, 100% { opacity: 0; } }
+
+    #dexprB { animation: dexprB 10s infinite; }
+    @keyframes dexprB { 0%, 32% { opacity: 0; } 35%, 89% { opacity: 1; } 92%, 100% { opacity: 0; } }
+
+    #da0 { animation: da0Reveal 10s infinite; }
+    @keyframes da0Reveal { 0%, 7% { opacity: 0; } 8%, 27% { opacity: 1; } 30%, 100% { opacity: 0; } }
+    #da1 { animation: da1Reveal 10s infinite; }
+    @keyframes da1Reveal { 0%, 10% { opacity: 0; } 11%, 27% { opacity: 1; } 30%, 100% { opacity: 0; } }
+    #da2 { animation: da2Reveal 10s infinite; }
+    @keyframes da2Reveal { 0%, 13% { opacity: 0; } 14%, 27% { opacity: 1; } 30%, 100% { opacity: 0; } }
+    #da3 { animation: da3Reveal 10s infinite; }
+    @keyframes da3Reveal { 0%, 16% { opacity: 0; } 17%, 27% { opacity: 1; } 30%, 100% { opacity: 0; } }
+
+    #db0 { animation: db0Reveal 10s infinite; }
+    @keyframes db0Reveal { 0%, 35% { opacity: 0; } 36%, 89% { opacity: 1; } 92%, 100% { opacity: 0; } }
+    #db1 { animation: db1Reveal 10s infinite; }
+    @keyframes db1Reveal { 0%, 38% { opacity: 0; } 39%, 89% { opacity: 1; } 92%, 100% { opacity: 0; } }
+
+    .demo-caption {
+      position: relative;
+      width: 100%;
+      max-width: 300px;
+      min-height: 34px;
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .demo-caption span {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: 100%;
+      opacity: 0;
+    }
+
+    .demo-caption .dc-cap1 { animation: mmCapP1 10s infinite; }
+    .demo-caption .dc-cap2 { animation: mmCapP2 10s infinite; }
+    .demo-caption .dc-cap3 { animation: mmCapP3 10s infinite; }
+    .demo-caption .dc-cap4 { animation: mmCapP4 10s infinite; color: var(--heading-dark); font-weight: 600; }
+    .demo-caption .dc-cap-reset { animation: mmCapReset 10s infinite; font-style: italic; }
+
+    @keyframes mmCapP1    { 0%, 27% { opacity: 1; } 30%, 100% { opacity: 0; } }
+    @keyframes mmCapP2    { 0%, 20% { opacity: 0; } 22%, 33% { opacity: 1; } 36%, 100% { opacity: 0; } }
+    @keyframes mmCapP3    { 0%, 53% { opacity: 0; } 55%, 66% { opacity: 1; } 69%, 100% { opacity: 0; } }
+    @keyframes mmCapP4    { 0%, 69% { opacity: 0; } 71%, 88% { opacity: 1; } 91%, 100% { opacity: 0; } }
+    @keyframes mmCapReset { 0%, 90% { opacity: 0; } 92%, 97% { opacity: 1; } 99%, 100% { opacity: 0; } }
   </style>
 </head>
 <body>
+
+<!-- ==================== RULES ==================== -->
+<div id="screen-rules">
+  <div class="rules-card">
+    <div class="rules-header">
+      <span class="rules-badge">Competitive · 3 Players</span>
+      <h1>Mathmania</h1>
+      <p class="rules-goal">Goal: solve the most problems before the clock runs out.</p>
+    </div>
+
+    <div class="rules-section">
+      <h2>The Problems</h2>
+      <div class="example-list">
+        <div class="example-row"><span class="op-badge op-add">+</span> 3482 + 719 = 4201</div>
+        <div class="example-row"><span class="op-badge op-sub">−</span> 9004 − 3871 = 5133</div>
+        <div class="example-row"><span class="op-badge op-mul">×</span> 638 × 47 = 29986</div>
+        <div class="example-row"><span class="op-badge op-div">÷</span> 9984 ÷ 24 = 416</div>
+      </div>
+      <p class="rules-note">Addition &amp; subtraction can use numbers up to 4 digits. Multiplication &amp; division keep the second number to 2 digits max, so they stay solvable. Subtraction never goes negative, and division always comes out even.</p>
+    </div>
+
+    <div class="rules-section">
+      <h2>How To Play</h2>
+      <div class="rule-cards">
+        <div class="rule-card">
+          <span class="icon">👥</span>
+          <div><strong>Three players, same problems</strong><p>Everyone races an identical, randomly generated problem list — but at your own pace, no turns.</p></div>
+        </div>
+        <div class="rule-card">
+          <span class="icon">⌨️</span>
+          <div><strong>Type your answer, hit Enter</strong><p>Use the keypad to enter digits, then submit with the green Enter key.</p></div>
+        </div>
+        <div class="rule-card">
+          <span class="icon">❌</span>
+          <div><strong>Wrong guess? Move on</strong><p>A miss skips straight to the next problem — no retries, no penalty besides lost time.</p></div>
+        </div>
+        <div class="rule-card">
+          <span class="icon">⏱️</span>
+          <div><strong>90-second clock</strong><p>Solve as many as you can before the timer hits zero.</p></div>
+        </div>
+        <div class="rule-card">
+          <span class="icon">🏆</span>
+          <div><strong>Most correct wins</strong><p>Highest correct-answer count when time's up takes the match. A tie is a tie.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rules-section">
+      <h2>See It In Action</h2>
+      <div class="live-demo">
+        <div class="demo-topbar">
+          <div class="demo-mini-standings">
+            <div class="demo-score-dot you">You<span class="demo-plus1">+1</span></div>
+            <div class="demo-score-dot">P2</div>
+            <div class="demo-score-dot">P3</div>
+          </div>
+          <div class="demo-clock-track"><div class="demo-clock-bar"></div></div>
+        </div>
+        <div class="demo-problem-card">
+          <div class="demo-expr-wrap">
+            <div class="demo-expr" id="dexprA">482 × 7 =</div>
+            <div class="demo-expr" id="dexprB">56 + 19 =</div>
+          </div>
+          <div class="demo-strip-wrap">
+            <div class="demo-strip" id="dstripA">
+              <span id="da0">3</span><span id="da1">3</span><span id="da2">0</span><span id="da3">0</span>
+            </div>
+            <div class="demo-strip" id="dstripB">
+              <span id="db0">7</span><span id="db1">5</span>
+            </div>
+          </div>
+        </div>
+        <p class="demo-caption">
+          <span class="dc-cap1">Everyone gets the exact same problem list.</span>
+          <span class="dc-cap2">Wrong guess? No retries — straight to the next problem.</span>
+          <span class="dc-cap3">Nail it and your score ticks up immediately.</span>
+          <span class="dc-cap4">Most correct when the clock hits zero wins the match.</span>
+          <span class="dc-cap-reset">↻ Watch it again</span>
+        </p>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="showScreen('screen-lobby')">Start Game →</button>
+  </div>
+</div>
 
 <!-- ==================== LOBBY ==================== -->
 <div id="screen-lobby">
@@ -613,7 +982,7 @@ function applyAnswerToPlayerState(state, problems, digitsTyped) {
 
 // ---- Screens ----
 function showScreen(id) {
-  ['screen-lobby', 'screen-waiting', 'screen-game'].forEach(s => {
+  ['screen-rules', 'screen-lobby', 'screen-waiting', 'screen-game'].forEach(s => {
     document.getElementById(s).style.display = s === id ? 'flex' : 'none';
   });
 }
@@ -967,7 +1336,7 @@ function renderTimer() {
 if (!isFirebaseConfigured()) {
   document.getElementById('config-warning').style.display = 'block';
 }
-showScreen('screen-lobby');
+showScreen('screen-rules');
 </script>
 </body>
 </html>

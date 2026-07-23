@@ -387,6 +387,30 @@
       box-shadow: 0 8px 28px rgba(90,60,30,0.10);
     }
 
+    .rules-body {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      width: 100%;
+    }
+
+    .rules-col {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      width: 100%;
+    }
+
+    /* Wide viewports: stop stacking everything in one narrow column and lay
+       the two halves side by side, left-aligned like a real instructions page. */
+    @media (min-width: 720px) {
+      .rules-card { max-width: 860px; padding: 28px 34px; }
+      .rules-body { flex-direction: row; align-items: flex-start; gap: 36px; text-align: left; }
+      .rules-col { flex: 1; min-width: 0; }
+      .example-list { display: grid; grid-template-columns: 1fr 1fr; }
+      .example-row { justify-content: flex-start; }
+    }
+
     .rules-badge {
       display: inline-block;
       background: var(--heading);
@@ -653,75 +677,81 @@
       <p class="rules-goal">Goal: solve the most problems before the clock runs out.</p>
     </div>
 
-    <div class="rules-section">
-      <h2>The Problems</h2>
-      <div class="example-list">
-        <div class="example-row"><span class="op-badge op-add">+</span> 3482 + 719 = 4201</div>
-        <div class="example-row"><span class="op-badge op-sub">−</span> 9004 − 3871 = 5133</div>
-        <div class="example-row"><span class="op-badge op-mul">×</span> 638 × 47 = 29986</div>
-        <div class="example-row"><span class="op-badge op-div">÷</span> 9984 ÷ 24 = 416</div>
-      </div>
-      <p class="rules-note">Addition &amp; subtraction can use numbers up to 4 digits. Multiplication &amp; division keep the second number to 2 digits max, so they stay solvable. Subtraction never goes negative, and division always comes out even.</p>
-    </div>
-
-    <div class="rules-section">
-      <h2>How To Play</h2>
-      <div class="rule-cards">
-        <div class="rule-card">
-          <span class="icon">👥</span>
-          <div><strong>Three players, same problems</strong><p>Everyone races an identical, randomly generated problem list — but at your own pace, no turns.</p></div>
-        </div>
-        <div class="rule-card">
-          <span class="icon">⌨️</span>
-          <div><strong>Type your answer, hit Enter</strong><p>Use the keypad to enter digits, then submit with the green Enter key.</p></div>
-        </div>
-        <div class="rule-card">
-          <span class="icon">❌</span>
-          <div><strong>Wrong guess? Move on</strong><p>A miss skips straight to the next problem — no retries, no penalty besides lost time.</p></div>
-        </div>
-        <div class="rule-card">
-          <span class="icon">⏱️</span>
-          <div><strong>90-second clock</strong><p>Solve as many as you can before the timer hits zero.</p></div>
-        </div>
-        <div class="rule-card">
-          <span class="icon">🏆</span>
-          <div><strong>Most correct wins</strong><p>Highest correct-answer count when time's up takes the match. A tie is a tie.</p></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="rules-section">
-      <h2>See It In Action</h2>
-      <div class="live-demo">
-        <div class="demo-topbar">
-          <div class="demo-mini-standings">
-            <div class="demo-score-dot you">You<span class="demo-plus1">+1</span></div>
-            <div class="demo-score-dot">P2</div>
-            <div class="demo-score-dot">P3</div>
+    <div class="rules-body">
+      <div class="rules-col">
+        <div class="rules-section">
+          <h2>The Problems</h2>
+          <div class="example-list">
+            <div class="example-row"><span class="op-badge op-add">+</span> 3482 + 719 = 4201</div>
+            <div class="example-row"><span class="op-badge op-sub">−</span> 9004 − 3871 = 5133</div>
+            <div class="example-row"><span class="op-badge op-mul">×</span> 638 × 47 = 29986</div>
+            <div class="example-row"><span class="op-badge op-div">÷</span> 9984 ÷ 24 = 416</div>
           </div>
-          <div class="demo-clock-track"><div class="demo-clock-bar"></div></div>
+          <p class="rules-note">Addition &amp; subtraction can use numbers up to 4 digits. Multiplication &amp; division keep the second number to 2 digits max, so they stay solvable. Subtraction never goes negative, and division always comes out even.</p>
         </div>
-        <div class="demo-problem-card">
-          <div class="demo-expr-wrap">
-            <div class="demo-expr" id="dexprA">482 × 7 =</div>
-            <div class="demo-expr" id="dexprB">56 + 19 =</div>
-          </div>
-          <div class="demo-strip-wrap">
-            <div class="demo-strip" id="dstripA">
-              <span id="da0">3</span><span id="da1">3</span><span id="da2">0</span><span id="da3">0</span>
+
+        <div class="rules-section">
+          <h2>How To Play</h2>
+          <div class="rule-cards">
+            <div class="rule-card">
+              <span class="icon">👥</span>
+              <div><strong>Three players, same problems</strong><p>Everyone races an identical, randomly generated problem list — but at your own pace, no turns.</p></div>
             </div>
-            <div class="demo-strip" id="dstripB">
-              <span id="db0">7</span><span id="db1">5</span>
+            <div class="rule-card">
+              <span class="icon">⌨️</span>
+              <div><strong>Type your answer, hit Enter</strong><p>Use the keypad to enter digits, then submit with the green Enter key.</p></div>
+            </div>
+            <div class="rule-card">
+              <span class="icon">❌</span>
+              <div><strong>Wrong guess? Move on</strong><p>A miss skips straight to the next problem — no retries, no penalty besides lost time.</p></div>
+            </div>
+            <div class="rule-card">
+              <span class="icon">⏱️</span>
+              <div><strong>90-second clock</strong><p>Solve as many as you can before the timer hits zero.</p></div>
+            </div>
+            <div class="rule-card">
+              <span class="icon">🏆</span>
+              <div><strong>Most correct wins</strong><p>Highest correct-answer count when time's up takes the match. A tie is a tie.</p></div>
             </div>
           </div>
         </div>
-        <p class="demo-caption">
-          <span class="dc-cap1">Everyone gets the exact same problem list.</span>
-          <span class="dc-cap2">Wrong guess? No retries — straight to the next problem.</span>
-          <span class="dc-cap3">Nail it and your score ticks up immediately.</span>
-          <span class="dc-cap4">Most correct when the clock hits zero wins the match.</span>
-          <span class="dc-cap-reset">↻ Watch it again</span>
-        </p>
+      </div>
+
+      <div class="rules-col">
+        <div class="rules-section">
+          <h2>See It In Action</h2>
+          <div class="live-demo">
+            <div class="demo-topbar">
+              <div class="demo-mini-standings">
+                <div class="demo-score-dot you">You<span class="demo-plus1">+1</span></div>
+                <div class="demo-score-dot">P2</div>
+                <div class="demo-score-dot">P3</div>
+              </div>
+              <div class="demo-clock-track"><div class="demo-clock-bar"></div></div>
+            </div>
+            <div class="demo-problem-card">
+              <div class="demo-expr-wrap">
+                <div class="demo-expr" id="dexprA">482 × 7 =</div>
+                <div class="demo-expr" id="dexprB">56 + 19 =</div>
+              </div>
+              <div class="demo-strip-wrap">
+                <div class="demo-strip" id="dstripA">
+                  <span id="da0">3</span><span id="da1">3</span><span id="da2">0</span><span id="da3">0</span>
+                </div>
+                <div class="demo-strip" id="dstripB">
+                  <span id="db0">7</span><span id="db1">5</span>
+                </div>
+              </div>
+            </div>
+            <p class="demo-caption">
+              <span class="dc-cap1">Everyone gets the exact same problem list.</span>
+              <span class="dc-cap2">Wrong guess? No retries — straight to the next problem.</span>
+              <span class="dc-cap3">Nail it and your score ticks up immediately.</span>
+              <span class="dc-cap4">Most correct when the clock hits zero wins the match.</span>
+              <span class="dc-cap-reset">↻ Watch it again</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 

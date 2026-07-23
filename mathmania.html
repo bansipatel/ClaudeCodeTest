@@ -402,12 +402,15 @@
     }
 
     /* Wide viewports: stop stacking everything in one narrow column and lay
-       the two halves side by side, left-aligned like a real instructions page. */
-    @media (min-width: 720px) {
-      .rules-card { max-width: 860px; padding: 28px 34px; }
-      .rules-body { flex-direction: row; align-items: flex-start; gap: 36px; text-align: left; }
-      .rules-col { flex: 1; min-width: 0; }
-      .example-list { display: grid; grid-template-columns: 1fr 1fr; }
+       it out like a real instructions page — two columns overall, and the
+       rule cards / examples grid up further inside each column, using
+       auto-fit so it fills whatever width is actually available instead of
+       jumping at one fixed breakpoint. */
+    @media (min-width: 600px) {
+      .rules-card { max-width: 960px; padding: 28px 40px; }
+      .rules-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 36px; text-align: left; }
+      .rule-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+      .example-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
       .example-row { justify-content: flex-start; }
     }
 
